@@ -9,6 +9,52 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet" />
+
+    <!-- ============================================================
+         FIREBASE — INSTRUCCIONES DE CONFIGURACIÓN
+         ============================================================
+         1. Ve a https://console.firebase.google.com
+         2. Crea un proyecto nuevo (ej: "shell-rendicion")
+         3. En el proyecto, haz clic en "Firestore Database" → Crear base de datos
+            (selecciona "Modo de prueba" para empezar)
+         4. Vuelve a la página principal del proyecto → ícono </> (Web)
+         5. Registra la app y copia las credenciales que te muestra
+         6. Reemplaza los valores de firebaseConfig aquí abajo con los tuyos
+         ============================================================ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // ✅ Credenciales de Firebase configuradas
+        const firebaseConfig = {
+            apiKey: "AIzaSyD84fWd7QcNIggcRapw1rnqSDj8n8",
+            authDomain: "shell-rendicion.firebaseapp.com",
+            projectId: "shell-rendicion",
+            storageBucket: "shell-rendicion.firebasestorage.app",
+            messagingSenderId: "210880588861",
+            appId: "1:210880588861:web:60d3248e25e2853ba88e54",
+            measurementId: "G-T2X80PNXMW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Función global para guardar rendición completa en Firestore
+        window.guardarEnFirebase = async function(datos) {
+            try {
+                const docRef = await addDoc(collection(db, "rendiciones"), {
+                    ...datos,
+                    fechaGuardado: serverTimestamp()
+                });
+                return docRef.id;
+            } catch (e) {
+                console.error("Error Firebase:", e);
+                return null;
+            }
+        };
+
+        window.firebaseReady = true;
+    </script>
     <style>
         :root {
             --shell-red: #DD1D21;
@@ -874,6 +920,23 @@
             background: transparent;
         }
 
+        .btn-save-bd {
+            width: 100%;
+            background: linear-gradient(135deg, #1a1d26, #252836);
+            border: 2px solid var(--shell-red);
+            color: var(--shell-red);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .btn-save-bd:active { opacity: 0.8; transform: scale(0.98); }
+        .btn-save-bd.loading { opacity: 0.6; pointer-events: none; }
+
         /* ESTILO PARA EL CRÉDITO DEL PIE DE PÁGINA */
         .footer-credits {
             text-align: center;
@@ -1034,6 +1097,14 @@
                     <div id="shellcard-list"></div>
                     <button class="btn-add-dep" onclick="agregarFilaPago('shellcard')">＋ Agregar venta</button>
                 </div>
+
+                <div class="multi-pago-section">
+                    <div class="multi-pago-header"><span>📱 App Shell</span><span id="total-appshell-display"
+                            class="multi-pago-total">$0</span></div>
+                    <div class="dep-header"><span>Descripción</span><span>Valor ($)</span><span></span></div>
+                    <div id="appshell-list"></div>
+                    <button class="btn-add-dep" onclick="agregarFilaPago('appshell')">＋ Agregar venta</button>
+                </div>
             </div>
             <div class="nav-btns">
                 <button class="btn-back" onclick="irTab('tab-depositos')">← Depósitos</button>
@@ -1056,14 +1127,15 @@
                     </div>
                     <div class="cuadre-row"><span>Shell Card</span><span id="cv-shellcard" class="cv-amount">$0</span>
                     </div>
+                    <div class="cuadre-row"><span>App Shell</span><span id="cv-appshell" class="cv-amount">$0</span>
+                    </div>
 
                     <div class="cuadre-row subtotal"><span>Total Recaudado</span><span id="total-recaudado-display"
                             class="cv-amount">$0</span></div>
                     <div class="cuadre-row diferencia-row" id="fila-diferencia">
                         <span>DIFERENCIA</span><span id="diferencia-display" class="cv-amount diferencia-val">$0</span>
                     </div>
-                    <div class="cuadre-row"><span>Cantidad Depósitos</span><span id="cantidad-depositos-count"
-                            class="cv-amount">0</span></div>
+
                 </div>
                 <div id="estado-badge" class="estado-badge" style="display:none"><span id="estado-texto"></span></div>
             </div>
@@ -1072,6 +1144,8 @@
                 <textarea id="observaciones" rows="3" placeholder="Observaciones del turno..."></textarea>
             </div>
             <button class="btn-primary-full" onclick="imprimirReporte()">🖨 Generar Reporte</button>
+            <button class="btn-save-bd" id="btn-guardar-bd" onclick="guardarRendicionBD()">💾 Guardar en Base de Datos</button>
+            <div id="bd-status" style="display:none;text-align:center;font-size:13px;font-weight:600;padding:8px;border-radius:10px;margin-bottom:8px"></div>
             <div class="nav-btns"><button class="btn-back" onclick="irTab('tab-pagos')">← Pagos</button></div>
         </section>
 
@@ -1134,6 +1208,7 @@
             agregarFilaPago('tarjetas'); // Agregado por defecto
             agregarFilaPago('copiloto');
             agregarFilaPago('shellcard');
+            agregarFilaPago('appshell');
         }
 
         function irTab(id) { document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById(id)?.classList.add('active'); document.getElementById('nav-' + id.replace('tab-', ''))?.classList.add('active'); document.querySelector('.app-content')?.scrollTo({ top: 0 }); tabActual = id; calcular(); }
@@ -1156,7 +1231,7 @@
 
         function getTotalDepositos() { let t = 0; document.querySelectorAll('.dep-val').forEach(i => t += parseMonto(i.value)); return t; }
 
-        const pagoCounters = { creditos: 1, copiloto: 1, shellcard: 1, tarjetas: 1 };
+        const pagoCounters = { creditos: 1, copiloto: 1, shellcard: 1, tarjetas: 1, appshell: 1 };
 
         function agregarFilaPago(tipo) { const id = pagoCounters[tipo]++; const c = document.getElementById(`${tipo}-list`); if (!c) return; const r = document.createElement('div'); r.className = 'deposit-row'; r.id = `${tipo}-row-${id}`; r.innerHTML = `<input type="text" class="isla-input pago-desc" id="${tipo}-desc-${id}" placeholder="Descripción" /><input type="text" class="isla-input pago-val" data-tipo="${tipo}" id="${tipo}-val-${id}" placeholder="0" inputmode="numeric" oninput="calcular()" /><button class="btn-del" onclick="eliminarFilaPago('${tipo}',${id})">×</button>`; c.appendChild(r); }
 
@@ -1165,8 +1240,8 @@
         function getTotalPago(tipo) { let t = 0; document.querySelectorAll(`.pago-val[data-tipo="${tipo}"]`).forEach(i => t += parseMonto(i.value)); return t; }
 
         function calcular() {
-            const ti = getTotalIslas(), td = getTotalDepositos(), cr = getTotalPago('creditos'), ta = getTotalPago('tarjetas'), co = getTotalPago('copiloto'), sc = getTotalPago('shellcard');
-            const tr = td + cr + ta + co + sc, dif = tr - ti;
+            const ti = getTotalIslas(), td = getTotalDepositos(), cr = getTotalPago('creditos'), ta = getTotalPago('tarjetas'), co = getTotalPago('copiloto'), sc = getTotalPago('shellcard'), ap = getTotalPago('appshell');
+            const tr = td + cr + ta + co + sc + ap, dif = tr - ti;
 
             setText('total-islas-display', '$' + formatMonto(ti));
             setText('total-depositos-display', '$' + formatMonto(td));
@@ -1177,6 +1252,7 @@
             setText('total-creditos-display', '$' + formatMonto(cr));
             setText('total-copiloto-display', '$' + formatMonto(co));
             setText('total-shellcard-display', '$' + formatMonto(sc));
+            setText('total-appshell-display', '$' + formatMonto(ap));
             setText('total-tarjetas-display', '$' + formatMonto(ta));
 
             setText('cv-efectivo', '$' + formatMonto(td));
@@ -1184,6 +1260,7 @@
             setText('cv-tarjetas', '$' + formatMonto(ta));
             setText('cv-copiloto', '$' + formatMonto(co));
             setText('cv-shellcard', '$' + formatMonto(sc));
+            setText('cv-appshell', '$' + formatMonto(ap));
 
             const de = document.getElementById('diferencia-display'); if (de) { if (dif > 0) de.textContent = '+$' + formatMonto(dif); else if (dif < 0) de.textContent = '-$' + formatMonto(Math.abs(dif)); else de.textContent = '$0'; }
             const fd = document.getElementById('fila-diferencia'); if (fd) { fd.classList.remove('positivo', 'negativo', 'cero'); if (dif > 0) fd.classList.add('positivo'); else if (dif < 0) fd.classList.add('negativo'); else fd.classList.add('cero'); }
@@ -1199,7 +1276,7 @@
         function cerrarAcciones() { document.getElementById('overlay')?.classList.remove('show'); document.getElementById('action-sheet')?.classList.remove('show'); }
         function imprimirReporte() { document.title = `Rendición T${turnoSeleccionado}`; window.print(); }
 
-        async function compartirReporte() { const n = document.getElementById('nombre')?.value || 'Atendedor'; const f = document.getElementById('fecha')?.value || ''; const ti = getTotalIslas(); const td = getTotalDepositos(); const cr = getTotalPago('creditos'); const ta = getTotalPago('tarjetas'); const co = getTotalPago('copiloto'); const sc = getTotalPago('shellcard'); const tr = td + cr + ta + co + sc; const dif = tr - ti; const dt = dif > 0 ? '+$' + formatMonto(dif) : dif < 0 ? '-$' + formatMonto(Math.abs(dif)) : '$0'; let il = ''; for (let i = 1; i <= cantidadIslas; i++) { const t = parseMonto(document.getElementById(`isla-${i}-total`)?.textContent); if (t > 0) il += `  Isla ${i}: $${formatMonto(t)}\n`; } let txt = `🔴 RENDICIÓN SHELL\n📅 Fecha: ${f}\n👤 Atendedor: ${n}\n🔢 Turno: ${turnoSeleccionado}\n\n⛽ Ventas:\n${il || '  —\n'}   TOTAL: $${formatMonto(ti)}\n\n💳 Pagos:\n  💵 Efectivo: $${formatMonto(td)}\n`; if (cr > 0) txt += `  🧾 Créditos: $${formatMonto(cr)}\n`; if (ta > 0) txt += `  💳 Tarjetas: $${formatMonto(ta)}\n`; if (co > 0) txt += `  🛵 Copiloto: $${formatMonto(co)}\n`; if (sc > 0) txt += `  🔴 Shell Card: $${formatMonto(sc)}\n`; txt += `\n📊 Total: $${formatMonto(tr)}\n📈 Diferencia: ${dt}`; if (navigator.share) { try { await navigator.share({ title: 'Rendición Shell', text: txt }); return; } catch (e) { } } try { await navigator.clipboard.writeText(txt); alert('✅ Copiado al portapapeles'); } catch (e) { } }
+        async function compartirReporte() { const n = document.getElementById('nombre')?.value || 'Atendedor'; const f = document.getElementById('fecha')?.value || ''; const ti = getTotalIslas(); const td = getTotalDepositos(); const cr = getTotalPago('creditos'); const ta = getTotalPago('tarjetas'); const co = getTotalPago('copiloto'); const sc = getTotalPago('shellcard'); const ap = getTotalPago('appshell'); const tr = td + cr + ta + co + sc + ap; const dif = tr - ti; const dt = dif > 0 ? '+$' + formatMonto(dif) : dif < 0 ? '-$' + formatMonto(Math.abs(dif)) : '$0'; let il = ''; for (let i = 1; i <= cantidadIslas; i++) { const t = parseMonto(document.getElementById(`isla-${i}-total`)?.textContent); if (t > 0) il += `  Isla ${i}: $${formatMonto(t)}\n`; } let txt = `🔴 RENDICIÓN SHELL\n📅 Fecha: ${f}\n👤 Atendedor: ${n}\n🔢 Turno: ${turnoSeleccionado}\n\n⛽ Ventas:\n${il || '  —\n'}   TOTAL: $${formatMonto(ti)}\n\n💳 Pagos:\n  💵 Efectivo: $${formatMonto(td)}\n`; if (cr > 0) txt += `  🧾 Créditos: $${formatMonto(cr)}\n`; if (ta > 0) txt += `  💳 Tarjetas: $${formatMonto(ta)}\n`; if (co > 0) txt += `  🛵 Copiloto: $${formatMonto(co)}\n`; if (sc > 0) txt += `  🔴 Shell Card: $${formatMonto(sc)}\n`; if (ap > 0) txt += `  📱 App Shell: $${formatMonto(ap)}\n`; txt += `\n📊 Total: $${formatMonto(tr)}\n📈 Diferencia: ${dt}`; if (navigator.share) { try { await navigator.share({ title: 'Rendición Shell', text: txt }); return; } catch (e) { } } try { await navigator.clipboard.writeText(txt); alert('✅ Copiado al portapapeles'); } catch (e) { } }
 
         function limpiarFormulario(confirmar = true) {
             if (confirmar && !confirm('¿Limpiar todo el formulario?')) return;
@@ -1221,7 +1298,7 @@
             agregarDeposito();
             agregarDeposito();
 
-            ['creditos', 'copiloto', 'shellcard', 'tarjetas'].forEach(t => {
+            ['creditos', 'copiloto', 'shellcard', 'tarjetas', 'appshell'].forEach(t => {
                 const l = document.getElementById(`${t}-list`);
                 if (l) l.innerHTML = '';
                 pagoCounters[t] = 1;
@@ -1247,7 +1324,8 @@
                     creditos: [],
                     copiloto: [],
                     shellcard: [],
-                    tarjetas: [] // Añadido
+                    tarjetas: [],
+                    appshell: []
                 };
 
                 for (let i = 1; i <= cantidadIslas; i++) {
@@ -1267,7 +1345,7 @@
                     });
                 });
 
-                ['creditos', 'copiloto', 'shellcard', 'tarjetas'].forEach(t => { // Añadido 'tarjetas'
+                ['creditos', 'copiloto', 'shellcard', 'tarjetas', 'appshell'].forEach(t => {
                     document.querySelectorAll(`.pago-val[data-tipo="${t}"]`).forEach(i => {
                         const id = i.id.split('-').pop();
                         e[t].push({
@@ -1315,7 +1393,7 @@
                     });
                 }
 
-                ['creditos', 'copiloto', 'shellcard', 'tarjetas'].forEach(t => { // Añadido 'tarjetas'
+                ['creditos', 'copiloto', 'shellcard', 'tarjetas', 'appshell'].forEach(t => { // Añadido 'appshell'
                     if (e[t] && e[t].length) {
                         const l = document.getElementById(`${t}-list`);
                         if (l) l.innerHTML = '';
@@ -1336,6 +1414,95 @@
         function formatMonto(n) { if (n === 0) return '0'; return Math.abs(Math.floor(n)).toLocaleString('es-CL'); }
         function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
         function setVal(id, v) { const el = document.getElementById(id); if (el && v) el.value = v; }
+
+        async function guardarRendicionBD() {
+            const btn = document.getElementById('btn-guardar-bd');
+            const status = document.getElementById('bd-status');
+
+            if (!window.firebaseReady) {
+                status.style.display = 'block';
+                status.style.background = 'rgba(239,68,68,0.12)';
+                status.style.color = '#ef4444';
+                status.textContent = '⚠️ Firebase no configurado. Revisa las instrucciones en el código.';
+                return;
+            }
+
+            btn.classList.add('loading');
+            btn.textContent = '⏳ Guardando...';
+            status.style.display = 'none';
+
+            // Recopilar todos los datos del formulario
+            const datos = {
+                fecha: document.getElementById('fecha')?.value || '',
+                nombre: document.getElementById('nombre')?.value || '',
+                numero: document.getElementById('numero')?.value || '',
+                turno: turnoSeleccionado,
+                observaciones: document.getElementById('observaciones')?.value || '',
+                totalIslas: getTotalIslas(),
+                totalDepositos: getTotalDepositos(),
+                totalCreditos: getTotalPago('creditos'),
+                totalTarjetas: getTotalPago('tarjetas'),
+                totalCopiloto: getTotalPago('copiloto'),
+                totalShellCard: getTotalPago('shellcard'),
+                totalAppShell: getTotalPago('appshell'),
+                islas: [],
+                depositos: [],
+                creditos: [],
+                tarjetas: [],
+                copiloto: [],
+                shellcard: [],
+                appshell: []
+            };
+
+            datos.totalRecaudado = datos.totalDepositos + datos.totalCreditos + datos.totalTarjetas + datos.totalCopiloto + datos.totalShellCard + datos.totalAppShell;
+            datos.diferencia = datos.totalRecaudado - datos.totalIslas;
+
+            // Islas
+            for (let i = 1; i <= cantidadIslas; i++) {
+                datos.islas.push({
+                    isla: i,
+                    combustible: parseMonto(document.getElementById(`isla-${i}-comb`)?.value),
+                    lubricantes: parseMonto(document.getElementById(`isla-${i}-lub`)?.value),
+                    otros: parseMonto(document.getElementById(`isla-${i}-otro`)?.value)
+                });
+            }
+
+            // Depósitos
+            document.querySelectorAll('.deposit-row').forEach(r => {
+                if (!r.id.startsWith('dep-row-')) return;
+                const id = r.id.replace('dep-row-', '');
+                const num = document.getElementById(`dep-num-${id}`)?.value || '';
+                const val = parseMonto(document.getElementById(`dep-val-${id}`)?.value);
+                if (num || val) datos.depositos.push({ numero: num, valor: val });
+            });
+
+            // Pagos por tipo
+            ['creditos','tarjetas','copiloto','shellcard','appshell'].forEach(t => {
+                document.querySelectorAll(`.pago-val[data-tipo="${t}"]`).forEach(inp => {
+                    const id = inp.id.split('-').pop();
+                    const desc = document.getElementById(`${t}-desc-${id}`)?.value || '';
+                    const val = parseMonto(inp.value);
+                    if (desc || val) datos[t].push({ descripcion: desc, valor: val });
+                });
+            });
+
+            const docId = await window.guardarEnFirebase(datos);
+
+            btn.classList.remove('loading');
+            btn.textContent = '💾 Guardar en Base de Datos';
+
+            if (docId) {
+                status.style.display = 'block';
+                status.style.background = 'rgba(34,197,94,0.12)';
+                status.style.color = '#22c55e';
+                status.textContent = '✅ Guardado correctamente en la base de datos';
+            } else {
+                status.style.display = 'block';
+                status.style.background = 'rgba(239,68,68,0.12)';
+                status.style.color = '#ef4444';
+                status.textContent = '❌ Error al guardar. Verifica la configuración de Firebase.';
+            }
+        }
 
         document.addEventListener('focusout', e => {
             const el = e.target;
