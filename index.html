@@ -21,10 +21,10 @@
          5. Registra la app y copia las credenciales que te muestra
          6. Reemplaza los valores de firebaseConfig aquí abajo con los tuyos
          ============================================================ -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+    <!-- Firebase CDN (compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script>
         // ✅ Credenciales de Firebase configuradas
         const firebaseConfig = {
             apiKey: "AIzaSyD84fWd7QcNIggcRapw1rnqSDj8n8",
@@ -36,15 +36,14 @@
             measurementId: "G-T2X80PNXMW"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        // Función global para guardar rendición completa en Firestore
         window.guardarEnFirebase = async function(datos) {
             try {
-                const docRef = await addDoc(collection(db, "rendiciones"), {
+                const docRef = await db.collection("rendiciones").add({
                     ...datos,
-                    fechaGuardado: serverTimestamp()
+                    fechaGuardado: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 return docRef.id;
             } catch (e) {
@@ -974,6 +973,7 @@
         <div class="action-sheet-handle"></div>
         <h3 class="action-sheet-title">Acciones</h3>
         <button class="action-btn" onclick="imprimirReporte();cerrarAcciones()">🖨 Imprimir / Exportar PDF</button>
+        <button class="action-btn" onclick="window.open('base-datos.html','_blank');cerrarAcciones()">🗄 Ver Base de Datos</button>
         <button class="action-btn" onclick="compartirReporte();cerrarAcciones()">📤 Compartir Reporte</button>
         <button class="action-btn danger" onclick="limpiarFormulario(true);cerrarAcciones()">🗑 Limpiar
             Formulario</button>
