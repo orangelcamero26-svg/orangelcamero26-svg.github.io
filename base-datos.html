@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shell - Base de Datos</title>
+    <title>Estación Digital — Rendición Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -15,335 +14,178 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #0f1117; color: #f0f2f8; min-height: 100vh; }
 
-        /* ===================== LOGIN ADMIN ===================== */
-        #login-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 24px;
+        /* ===================== BANNER BIENVENIDA ===================== */
+        .welcome-banner {
             position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: #0f1117;
+            top: 0; left: 0; right: 0;
+            background: linear-gradient(90deg, #FBCF09 0%, #DD1D21 100%);
+            color: #111;
+            padding: 12px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 14px;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            animation: slideDown 0.5s ease-out;
+        }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+        /* ===================== LOGIN ===================== */
+        #login-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 24px; position: fixed; inset: 0; z-index: 9999; background: #0f1117;
         }
         #login-screen.hidden { display: none; }
-
-        .login-bg {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-        }
-        .login-bg::before {
-            content: '';
-            position: absolute;
-            top: -100px; left: -100px;
-            width: 380px; height: 380px;
-            background: radial-gradient(circle, rgba(221,29,33,0.12) 0%, transparent 70%);
-            border-radius: 50%;
-        }
-        .login-bg::after {
-            content: '';
-            position: absolute;
-            bottom: -80px; right: -80px;
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(251,207,9,0.07) 0%, transparent 70%);
-            border-radius: 50%;
-        }
-
         .login-card {
-            background: #1a1d26;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 24px;
-            padding: 32px 28px;
-            width: 100%;
-            max-width: 380px;
-            position: relative;
-            z-index: 1;
+            background: #1a1d26; border: 1px solid rgba(255,255,255,0.08); border-radius: 24px;
+            padding: 32px 28px; width: 100%; max-width: 380px; position: relative; z-index: 1;
             box-shadow: 0 24px 60px rgba(0,0,0,0.5);
         }
-        .login-logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 28px; }
         .login-logo-icon {
-            width: 72px; height: 72px;
-            background: linear-gradient(135deg, #B01519, #DD1D21);
-            border-radius: 20px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 8px 24px rgba(221,29,33,0.4);
-            border: 2px solid #FBCF09;
-            font-size: 32px;
+            width: 72px; height: 72px; background: linear-gradient(135deg, #B01519, #DD1D21);
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 8px 24px rgba(221,29,33,0.4); border: 2px solid #FBCF09; font-size: 32px; margin: 0 auto 20px;
         }
-        .login-title { font-size: 22px; font-weight: 800; }
-        .login-sub { font-size: 13px; color: #5a6080; margin-top: -4px; }
-        .admin-badge {
-            background: rgba(251,207,9,0.12);
-            border: 1px solid rgba(251,207,9,0.3);
-            color: #FBCF09;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 20px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
+        .login-title { font-size: 24px; font-weight: 800; text-align: center; }
+        .login-sub { font-size: 14px; color: #5a6080; text-align: center; margin-bottom: 20px; }
+        .admin-badge { background: rgba(251,207,9,0.12); border: 1px solid rgba(251,207,9,0.3); color: #FBCF09; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; display: block; width: fit-content; margin: 0 auto 20px; }
 
         .login-form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-        .login-label { font-size: 11px; font-weight: 700; color: #8a90a8; text-transform: uppercase; letter-spacing: 0.6px; }
+        .login-label { font-size: 11px; font-weight: 700; color: #8a90a8; text-transform: uppercase; }
         .login-input {
-            background: #252836;
-            border: 1.5px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            color: #f0f2f8;
-            font-family: inherit;
-            font-size: 15px;
-            padding: 13px 15px;
-            width: 100%;
-            outline: none;
-            -webkit-appearance: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #252836; border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px;
+            color: #f0f2f8; font-size: 15px; padding: 13px 15px; width: 100%; outline: none;
         }
-        .login-input:focus { border-color: #DD1D21; box-shadow: 0 0 0 3px rgba(221,29,33,0.12); }
-        .login-input::placeholder { color: #5a6080; }
-
+        .login-input:focus { border-color: #DD1D21; }
         .btn-login {
-            width: 100%;
-            background: linear-gradient(135deg, #B01519, #DD1D21);
-            border: none; color: #fff;
-            font-family: inherit; font-size: 15px; font-weight: 700;
-            padding: 14px; border-radius: 12px; cursor: pointer; margin-top: 6px;
-            transition: opacity 0.2s, transform 0.1s;
-            box-shadow: 0 4px 16px rgba(221,29,33,0.4);
+            width: 100%; background: linear-gradient(135deg, #B01519, #DD1D21);
+            border: none; color: #fff; font-size: 15px; font-weight: 700; padding: 14px;
+            border-radius: 12px; cursor: pointer; margin-top: 6px; box-shadow: 0 4px 16px rgba(221,29,33,0.4);
         }
-        .btn-login:active { opacity: 0.85; transform: scale(0.98); }
-        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
 
-        .login-error {
-            display: none;
-            background: rgba(239,68,68,0.1);
-            border: 1px solid rgba(239,68,68,0.3);
-            color: #ff8080; font-size: 13px; font-weight: 600;
-            padding: 10px 14px; border-radius: 10px; margin-top: 12px; text-align: center;
-        }
-        .login-error.show { display: block; }
-
-        .login-spinner {
-            display: inline-block; width: 16px; height: 16px;
-            border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
-            border-radius: 50%; animation: spin 0.7s linear infinite;
-            vertical-align: middle; margin-right: 6px;
-        }
-        @keyframes spin { to { transform: rotate(360deg) } }
-
-        /* ===================== APP ADMIN ===================== */
+        /* ===================== APP INTERFACE ===================== */
         #app-screen { display: none; }
         #app-screen.visible { display: block; }
+        .header { background: linear-gradient(135deg, #B01519, #DD1D21); border-bottom: 2.5px solid #FBCF09; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .header-title { font-size: 20px; font-weight: 800; }
+        .header-sub { font-size: 12px; color: rgba(255,255,255,0.7); }
 
-        .header { background: linear-gradient(135deg, #B01519, #DD1D21); border-bottom: 2.5px solid #FBCF09; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 20px rgba(221,29,33,0.4); }
-        .header-left { display: flex; align-items: center; gap: 12px; }
-        .header-icon { width: 40px; height: 40px; background: #FBCF09; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-        .header-title { font-size: 18px; font-weight: 800; }
-        .header-sub { font-size: 12px; color: rgba(255,255,255,0.65); }
-        .header-actions { display: flex; align-items: center; gap: 10px; }
-        .back-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; font-weight: 600; }
+        .toolbar { padding: 16px 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: #1a1d26; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .search-input { background: #252836; border: 1.5px solid rgba(255,255,255,0.08); border-radius: 8px; color: #f0f2f8; padding: 10px 14px; font-size: 14px; outline: none; }
+        .btn-toolbar { background: #252836; border: 1.5px solid rgba(255,255,255,0.08); color: #fff; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-toolbar.green { border-color: #22c55e; color: #22c55e; }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 20px;
-            padding: 5px 12px 5px 7px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #fff;
-        }
-        .user-avatar {
-            width: 24px; height: 24px;
-            background: #FBCF09; color: #111;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: 800;
-        }
-        .btn-logout {
-            background: rgba(239,68,68,0.2);
-            border: 1px solid rgba(239,68,68,0.4);
-            color: #ff8080;
-            font-family: inherit; font-size: 12px; font-weight: 700;
-            padding: 6px 12px; border-radius: 8px; cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-logout:hover { background: rgba(239,68,68,0.35); }
-
-        .toolbar { padding: 14px 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: #1a1d26; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .search-input { background: #252836; border: 1.5px solid rgba(255,255,255,0.08); border-radius: 8px; color: #f0f2f8; font-family: inherit; font-size: 14px; padding: 8px 14px; width: 240px; outline: none; }
-        .search-input:focus { border-color: #DD1D21; }
-        .btn-toolbar { background: #252836; border: 1.5px solid rgba(255,255,255,0.08); color: #f0f2f8; font-family: inherit; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
-        .btn-toolbar.green { border-color: rgba(34,197,94,0.4); color: #22c55e; }
-        .total-reg { margin-left: auto; font-size: 13px; color: #5a6080; font-weight: 600; }
-
+        /* TABLA */
         .table-wrap { overflow-x: auto; padding: 20px 24px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1100px; }
-        thead th { background: #1a1d26; color: #8a90a8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.06); white-space: nowrap; }
-        thead th.th-r { text-align: right; }
-        tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
+        thead th { background: #1a1d26; color: #8a90a8; padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.06); }
+        tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: 0.2s; }
         tbody tr:hover { background: rgba(255,255,255,0.03); }
-        td { padding: 10px 12px; vertical-align: middle; }
-        tfoot tr { background: #1a1d26; border-top: 2px solid rgba(251,207,9,0.3); }
-        tfoot td { padding: 11px 12px; font-size: 12px; font-weight: 800; color: #FBCF09; }
-        .td-num { color: #5a6080; font-size: 11px; }
-        .td-bold { font-weight: 600; }
-        .td-c { text-align: center; }
-        .td-r { text-align: right; }
-        .td-yellow { color: #FBCF09; font-weight: 700; }
-        .td-fecha { color: #5a6080; font-size: 11px; white-space: nowrap; }
+        td { padding: 12px; }
         .pos { color: #22c55e; font-weight: 800; }
         .neg { color: #ef4444; font-weight: 800; }
         .cero { color: #FBCF09; font-weight: 800; }
-        .badge { background: rgba(221,29,33,0.2); color: #ff6b6b; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 800; }
-        .btn-ic { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px 6px; border-radius: 6px; }
-        .btn-ic:hover { background: rgba(255,255,255,0.08); }
 
-        #carga { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 80px; color: #5a6080; font-size: 14px; }
-        .spinner { width: 36px; height: 36px; border: 3px solid rgba(221,29,33,0.2); border-top-color: #DD1D21; border-radius: 50%; animation: spin 0.8s linear infinite; }
-
-        #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        /* MODAL */
+        #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
         #modal.open { display: flex; }
-        .mbox { background: #1a1d26; border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; width: 100%; max-width: 640px; max-height: 85vh; overflow-y: auto; padding: 24px; }
-        .mhead { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
-        .mtitle { font-size: 17px; font-weight: 800; }
-        .msub { font-size: 12px; color: #8a90a8; margin-top: 3px; }
-        .mbtn-x { background: rgba(255,255,255,0.08); border: none; color: #f0f2f8; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-        .dgrid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
-        .dcard { background: #252836; border-radius: 10px; padding: 12px; text-align: center; }
-        .dlabel { font-size: 11px; color: #5a6080; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
-        .dval { font-size: 18px; font-weight: 800; }
-        .dsec { font-size: 13px; font-weight: 700; color: #8a90a8; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .dtable { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .dtable th { background: #252836; color: #8a90a8; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 8px 10px; text-align: left; }
-        .dtable td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
-
-        /* Acceso denegado */
-        .access-denied {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 60vh;
-            gap: 16px;
-            text-align: center;
-            padding: 40px;
-        }
-        .access-denied.show { display: flex; }
-        .access-denied-icon { font-size: 56px; }
-        .access-denied h2 { font-size: 20px; font-weight: 800; color: #ef4444; }
-        .access-denied p { font-size: 14px; color: #5a6080; max-width: 320px; line-height: 1.6; }
+        .mbox { background: #1a1d26; border-radius: 18px; width: 100%; max-width: 640px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+        
+        /* UTILIDADES */
+        .spinner { width: 30px; height: 30px; border: 3px solid rgba(221,29,33,0.2); border-top-color: #DD1D21; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg) } }
     </style>
 </head>
 <body>
 
-<!-- ======================== PANTALLA LOGIN ADMIN ======================== -->
+<div id="welcome-banner" class="welcome-banner">
+    <span id="welcome-text"></span>
+</div>
+
 <div id="login-screen">
-    <div class="login-bg"></div>
     <div class="login-card">
-        <div class="login-logo-wrap">
-            <div class="login-logo-icon">🗄️</div>
-            <div style="text-align:center">
-                <div class="login-title">Base de Datos</div>
-                <div class="login-sub" style="margin-bottom:8px">Shell Rendición</div>
-                <span class="admin-badge">🔒 Acceso Administrador</span>
-            </div>
-        </div>
+        <div class="login-logo-icon">⚡</div>
+        <div class="login-title">Estación Digital</div>
+        <div class="login-sub">Rendición Pro</div>
+        <span class="admin-badge">🔒 Acceso Administrador</span>
 
         <div class="login-form-group">
-            <span class="login-label">Correo electrónico</span>
-            <input type="text" class="login-input" id="login-email" placeholder="admin@shell.com" inputmode="email" autocomplete="email" autocapitalize="none" />
+            <span class="login-label">Correo</span>
+            <input type="email" class="login-input" id="login-email" placeholder="admin@ejemplo.com" />
         </div>
         <div class="login-form-group">
             <span class="login-label">Contraseña</span>
-            <input type="password" class="login-input" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')iniciarSesion()" />
+            <input type="password" class="login-input" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()" />
         </div>
-
         <button class="btn-login" id="btn-login" onclick="iniciarSesion()">Ingresar</button>
-        <div class="login-error" id="login-error"></div>
-
-        <p style="text-align:center;font-size:11px;color:#5a6080;margin-top:20px">
-            Solo personal autorizado puede acceder<br>a los registros de todos los empleados
-        </p>
+        <div id="login-error" style="color:#ef4444; font-size:13px; margin-top:10px; text-align:center; display:none;"></div>
     </div>
 </div>
 
-<!-- ======================== APP ADMIN ======================== -->
 <div id="app-screen">
     <div class="header">
-        <div class="header-left">
-            <div class="header-icon">&#128738;</div>
-            <div>
-                <div class="header-title">Shell &mdash; Base de Datos</div>
-                <div class="header-sub" id="header-sub">Historial de Rendiciones</div>
-            </div>
+        <div>
+            <div class="header-title">Estación Digital</div>
+            <div class="header-sub" id="header-sub">Rendición Pro — Historial General</div>
         </div>
-        <div class="header-actions">
-            <div class="user-info" id="user-info">
-                <div class="user-avatar" id="user-avatar">A</div>
-                <span id="user-name-display">Admin</span>
-            </div>
-            <button class="btn-logout" onclick="cerrarSesion()">🚪 Salir</button>
-            <a href="index.html" class="back-link">&larr; App</a>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <span id="user-display" style="font-weight:700; font-size:13px;"></span>
+            <button onclick="cerrarSesion()" style="background:none; border:1px solid #fff; color:#fff; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">Cerrar Sesión</button>
         </div>
     </div>
 
-    <!-- Acceso denegado (empleados normales) -->
-    <div class="access-denied" id="access-denied">
-        <div class="access-denied-icon">🔒</div>
-        <h2>Acceso Restringido</h2>
-        <p>No tienes permisos para ver los registros de otros empleados. Esta sección es solo para administradores.</p>
-        <a href="index.html" style="background:#DD1D21;color:#fff;padding:12px 24px;border-radius:12px;text-decoration:none;font-weight:700;font-size:14px">← Volver a la App</a>
+    <div class="toolbar">
+        <input type="text" class="search-input" id="f-nombre" placeholder="Nombre empleado..." oninput="filtrar()" style="width: 180px;" />
+        
+        <select class="search-input" id="f-mes" onchange="filtrar()" style="width: 140px;">
+            <option value="">Todos los meses</option>
+            <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+            <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+            <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+
+        <select class="search-input" id="f-año" onchange="filtrar()" style="width: 100px;">
+            <option value="">Todos</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+        </select>
+
+        <button class="btn-toolbar" onclick="cargarDatos()">🔄 Actualizar</button>
+        <button class="btn-toolbar green" onclick="exportarCSV()">📊 Exportar CSV</button>
+        <span id="total-reg" style="margin-left:auto; font-size:12px; color:#5a6080;"></span>
     </div>
 
-    <div id="main-content" style="display:none">
-        <div class="toolbar">
-            <input type="text" class="search-input" id="buscador" placeholder="Buscar por nombre, fecha o turno..." oninput="filtrar()" />
-            <button class="btn-toolbar" onclick="cargarDatos()">Actualizar</button>
-            <button class="btn-toolbar green" onclick="exportarCSV()">Exportar CSV</button>
-            <span class="total-reg" id="total-reg"></span>
-        </div>
+    <div id="carga" style="display:none; flex-direction:column; align-items:center; padding:50px;">
+        <div class="spinner"></div>
+        <p style="margin-top:15px; color:#5a6080;">Cargando base de datos...</p>
+    </div>
 
-        <div id="carga"><div class="spinner"></div><span>Conectando con Firebase...</span></div>
-
-        <div id="table-wrap" class="table-wrap" style="display:none">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th><th>Fecha</th><th>Nombre</th><th class="td-c">Turno</th>
-                        <th class="th-r">Total Islas</th><th class="th-r">Efectivo</th>
-                        <th class="th-r">Creditos</th><th class="th-r">Tarjetas</th>
-                        <th class="th-r">Shell Card</th><th class="th-r">App Shell</th>
-                        <th class="th-r">Total Recaudado</th><th class="th-r">Diferencia</th>
-                        <th>Guardado</th><th class="td-c">Ver / Borrar</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody"></tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4">TOTALES</td>
-                        <td class="td-r" id="s-islas">$0</td><td class="td-r" id="s-dep">$0</td>
-                        <td class="td-r" id="s-cred">$0</td><td class="td-r" id="s-tar">$0</td>
-                        <td class="td-r" id="s-sc">$0</td><td class="td-r" id="s-ap">$0</td>
-                        <td class="td-r" id="s-tot">$0</td><td class="td-r" id="s-dif">$0</td>
-                        <td colspan="2"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+    <div id="table-wrap" class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Nombre</th>
+                    <th>Turno</th>
+                    <th>Venta Total</th>
+                    <th>Recaudado</th>
+                    <th>Diferencia</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
     </div>
 </div>
 
 <div id="modal" onclick="if(event.target===this)cerrarModal()">
-    <div class="mbox"><div id="mcontent"></div></div>
+    <div class="mbox" id="mcontent"></div>
 </div>
 
 <script>
+// CONFIGURACIÓN FIREBASE (Mantenida de tu código original)
 var firebaseConfig = {
     apiKey: "AIzaSyDt0K2X84fWd7QcN1ggxRapw1rnqSDj8n8",
     authDomain: "shell-rendicion.firebaseapp.com",
@@ -356,201 +198,149 @@ firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 var auth = firebase.auth();
 var todos = [];
-var currentUserEmail = '';
 
-// ---- LISTA DE CORREOS ADMINISTRADORES ----
-// Agrega aquí los correos de quienes pueden ver todos los registros
-var ADMINS = [
-    "orangelcamero26@gmail.com"
-    // Agrega más correos admin aquí
-];
+var ADMINS = ["orangelcamero26@gmail.com"];
 
-function esAdmin(email) {
-    return ADMINS.indexOf((email || '').toLowerCase()) >= 0;
+// FORMATEO CHILENO (CLP)
+function fmt(n) { return '$' + Math.floor(Number(n||0)).toLocaleString('es-CL'); }
+function fmtD(n) { 
+    var v = Math.floor(Number(n||0));
+    if(v > 0) return '+$' + v.toLocaleString('es-CL');
+    if(v < 0) return '-$' + Math.abs(v).toLocaleString('es-CL');
+    return '$0';
 }
+function dc(n) { return n < 0 ? 'neg' : n > 0 ? 'pos' : 'cero'; }
 
-/* ======= AUTH ======= */
+// AUTENTICACIÓN
 auth.onAuthStateChanged(function(user) {
-    if (!user) {
-        mostrarLogin();
-    } else {
-        var email = (user.email || '').toLowerCase();
-        currentUserEmail = email;
-        var nombreCorto = email.split('@')[0];
+    if (user) {
+        var email = user.email.toLowerCase();
+        if (ADMINS.includes(email)) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.add('visible');
+            document.getElementById('user-display').textContent = email.split('@')[0].toUpperCase();
+            
+            // BANNER BIENVENIDA
+            var banner = document.getElementById('welcome-banner');
+            document.getElementById('welcome-text').textContent = "👋 ¡Hola, " + email.split('@')[0].toUpperCase() + "! Bienvenido a Estación Digital.";
+            banner.style.display = 'block';
+            setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.style.display = 'none', 800); }, 4000);
 
-        // Actualizar UI de usuario
-        document.getElementById('user-name-display').textContent = nombreCorto;
-        document.getElementById('user-avatar').textContent = nombreCorto.charAt(0).toUpperCase();
-        document.getElementById('header-sub').textContent = '👤 ' + nombreCorto + ' — Historial';
-
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('app-screen').classList.add('visible');
-
-        if (esAdmin(email)) {
-            document.getElementById('main-content').style.display = 'block';
-            document.getElementById('access-denied').classList.remove('show');
             cargarDatos();
         } else {
-            // Usuario autenticado pero sin permisos de admin
-            document.getElementById('main-content').style.display = 'none';
-            document.getElementById('access-denied').classList.add('show');
+            alert("No tienes permisos de administrador.");
+            auth.signOut();
         }
+    } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('app-screen').classList.remove('visible');
     }
 });
 
-function mostrarLogin() {
-    document.getElementById('login-screen').classList.remove('hidden');
-    document.getElementById('app-screen').classList.remove('visible');
-    document.getElementById('login-email').value = '';
-    document.getElementById('login-password').value = '';
-    document.getElementById('login-error').classList.remove('show');
-}
-
 async function iniciarSesion() {
-    var email = document.getElementById('login-email').value.trim();
-    var password = document.getElementById('login-password').value;
-    var btn = document.getElementById('btn-login');
-    var errorEl = document.getElementById('login-error');
-
-    if (!email || !password) {
-        errorEl.textContent = '⚠️ Completa todos los campos';
-        errorEl.classList.add('show'); return;
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<span class="login-spinner"></span>Ingresando...';
-    errorEl.classList.remove('show');
-
+    var email = document.getElementById('login-email').value;
+    var pass = document.getElementById('login-password').value;
     try {
-        await auth.signInWithEmailAndPassword(email, password);
+        await auth.signInWithEmailAndPassword(email, pass);
     } catch (e) {
-        var msg = '❌ Error al ingresar. Verifica tus datos.';
-        if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') msg = '❌ Correo o contraseña incorrectos.';
-        else if (e.code === 'auth/too-many-requests') msg = '⚠️ Demasiados intentos. Espera unos minutos.';
-        else if (e.code === 'auth/invalid-email') msg = '⚠️ Formato de correo inválido.';
-        errorEl.textContent = msg; errorEl.classList.add('show');
-        btn.disabled = false; btn.innerHTML = 'Ingresar';
+        var err = document.getElementById('login-error');
+        err.style.display = 'block';
+        err.textContent = "Error: Credenciales incorrectas.";
     }
 }
 
-async function cerrarSesion() {
-    if (!confirm('¿Cerrar sesión?')) return;
-    await auth.signOut();
+function cerrarSesion() { auth.signOut(); }
+
+// GESTIÓN DE DATOS
+function cargarDatos() {
+    document.getElementById('carga').style.display = 'flex';
+    db.collection("rendiciones").orderBy("fechaGuardado", "desc").get().then(snap => {
+        todos = [];
+        snap.forEach(doc => todos.push({id: doc.id, ...doc.data()}));
+        filtrar(); // Aplica filtros y renderiza
+        document.getElementById('carga').style.display = 'none';
+    });
 }
 
-/* ======= DATOS ======= */
-function fmt(n) { return '$' + Math.floor(Number(n||0)).toLocaleString('es-CL'); }
-function fmtD(n) { var v=Math.floor(Number(n||0)); if(v>0) return '+$'+v.toLocaleString('es-CL'); if(v<0) return '-$'+Math.abs(v).toLocaleString('es-CL'); return '$0'; }
-function dc(n) { var v=Number(n||0); return v<0?'neg':v>0?'pos':'cero'; }
+function filtrar() {
+    var nom = document.getElementById('f-nombre').value.toLowerCase();
+    var mes = document.getElementById('f-mes').value;
+    var año = document.getElementById('f-año').value;
 
-function cargarDatos() {
-    document.getElementById('carga').innerHTML = '<div class="spinner"></div><span>Cargando registros...</span>';
-    document.getElementById('carga').style.display = 'flex';
-    document.getElementById('table-wrap').style.display = 'none';
+    var filtrados = todos.filter(r => {
+        var cumpleNom = (r.nombre || '').toLowerCase().includes(nom);
+        var f = r.fecha || '';
+        var partes = f.includes('-') ? f.split('-') : f.split('/');
+        var rMes = f.includes('-') ? partes[1] : partes[1];
+        var rAño = f.includes('-') ? partes[0] : partes[2];
+        
+        return cumpleNom && (mes === "" || rMes === mes) && (año === "" || rAño === año);
+    });
 
-    db.collection("rendiciones").orderBy("fechaGuardado","desc").get()
-        .then(function(snap) {
-            todos = [];
-            snap.forEach(function(d) { todos.push(Object.assign({id:d.id}, d.data())); });
-            renderTabla(todos);
-        })
-        .catch(function(e) {
-            document.getElementById('carga').innerHTML = '<p style="color:#ef4444">Error: '+e.message+'</p>';
-        });
+    // ORDENAR POR MAYOR DESCUADRE (Diferencia absoluta)
+    filtrados.sort((a, b) => Math.abs(Number(b.diferencia || 0)) - Math.abs(Number(a.diferencia || 0)));
+
+    renderTabla(filtrados);
 }
 
 function renderTabla(lista) {
-    document.getElementById('carga').style.display = 'none';
-    document.getElementById('table-wrap').style.display = 'block';
-    document.getElementById('total-reg').textContent = lista.length + ' registros';
     var tbody = document.getElementById('tbody');
-    if (!lista.length) {
-        tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#5a6080;padding:40px">Sin registros</td></tr>';
-        actualizarTotales([]); return;
-    }
-    tbody.innerHTML = lista.map(function(r,i) {
-        var ts = r.fechaGuardado && r.fechaGuardado.toDate ? r.fechaGuardado.toDate().toLocaleString('es-CL') : '-';
-        return '<tr>'+
-            '<td class="td-num">'+(lista.length-i)+'</td>'+
-            '<td>'+(r.fecha||'-')+'</td>'+
-            '<td class="td-bold">'+(r.nombre||'-')+'</td>'+
-            '<td class="td-c"><span class="badge">T'+(r.turno||'-')+'</span></td>'+
-            '<td class="td-r">'+fmt(r.totalIslas)+'</td>'+
-            '<td class="td-r">'+fmt(r.totalDepositos)+'</td>'+
-            '<td class="td-r">'+fmt(r.totalCreditos)+'</td>'+
-            '<td class="td-r">'+fmt(r.totalTarjetas)+'</td>'+
-            '<td class="td-r">'+fmt(r.totalShellCard)+'</td>'+
-            '<td class="td-r">'+fmt(r.totalAppShell)+'</td>'+
-            '<td class="td-r td-yellow">'+fmt(r.totalRecaudado)+'</td>'+
-            '<td class="td-r '+dc(r.diferencia)+'">'+fmtD(r.diferencia)+'</td>'+
-            '<td class="td-fecha">'+ts+'</td>'+
-            '<td class="td-c">'+
-                '<button class="btn-ic" onclick="verDetalle(\''+r.id+'\')">&#128065;</button>'+
-                (esAdmin(currentUserEmail) ? '<button class="btn-ic" onclick="borrar(\''+r.id+'\')" style="color:#ef4444">&#128465;</button>' : '')+
-            '</td>'+
-        '</tr>';
-    }).join('');
-    actualizarTotales(lista);
-}
-
-function actualizarTotales(lista) {
-    function s(k) { return lista.reduce(function(a,r){return a+Number(r[k]||0);},0); }
-    document.getElementById('s-islas').textContent = fmt(s('totalIslas'));
-    document.getElementById('s-dep').textContent   = fmt(s('totalDepositos'));
-    document.getElementById('s-cred').textContent  = fmt(s('totalCreditos'));
-    document.getElementById('s-tar').textContent   = fmt(s('totalTarjetas'));
-    document.getElementById('s-sc').textContent    = fmt(s('totalShellCard'));
-    document.getElementById('s-ap').textContent    = fmt(s('totalAppShell'));
-    document.getElementById('s-tot').textContent   = fmt(s('totalRecaudado'));
-    var d=s('diferencia'); var el=document.getElementById('s-dif');
-    el.textContent=fmtD(d); el.className='td-r '+dc(d);
-}
-
-function borrar(id) {
-    if (!confirm('Eliminar este registro permanentemente?')) return;
-    db.collection("rendiciones").doc(id).delete()
-        .then(function() { todos=todos.filter(function(r){return r.id!==id;}); renderTabla(todos); })
-        .catch(function(e) { alert('Error: '+e.message); });
+    document.getElementById('total-reg').textContent = lista.length + " registros encontrados";
+    tbody.innerHTML = lista.map(r => `
+        <tr>
+            <td>${r.fecha || '-'}</td>
+            <td style="font-weight:700;">${r.nombre || '-'}</td>
+            <td>T${r.turno || '-'}</td>
+            <td>${fmt(r.totalIslas)}</td>
+            <td>${fmt(r.totalRecaudado)}</td>
+            <td class="${dc(r.diferencia)}">${fmtD(r.diferencia)}</td>
+            <td>
+                <button onclick="verDetalle('${r.id}')" style="cursor:pointer; background:none; border:none; font-size:16px;">👁️</button>
+                <button onclick="borrar('${r.id}')" style="cursor:pointer; background:none; border:none; font-size:16px; margin-left:10px;">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 function verDetalle(id) {
-    var r=null;
-    for(var i=0;i<todos.length;i++){if(todos[i].id===id){r=todos[i];break;}}
+    var r = todos.find(x => x.id === id);
     if(!r) return;
-    var islas=(r.islas||[]).map(function(x){return '<tr><td>Isla '+x.isla+'</td><td>'+fmt(x.combustible)+'</td><td>'+fmt(x.lubricantes)+'</td><td>'+fmt(x.otros)+'</td></tr>';}).join('');
-    var pagos=['creditos','tarjetas','copiloto','shellcard','appshell'].map(function(t){return (r[t]||[]).map(function(p){return '<tr><td>'+t+'</td><td>'+(p.descripcion||'-')+'</td><td>'+fmt(p.valor)+'</td></tr>';}).join('');}).join('');
-    document.getElementById('mcontent').innerHTML =
-        '<div class="mhead"><div><div class="mtitle">Rendicion - '+(r.fecha||'-')+'</div><div class="msub">'+(r.nombre||'-')+' - Turno '+(r.turno||'-')+(r.emailUsuario?' | '+r.emailUsuario:'')+'</div></div>'+
-        '<button class="mbtn-x" onclick="cerrarModal()">X</button></div>'+
-        '<div class="dgrid">'+
-            '<div class="dcard"><div class="dlabel">Total Ventas</div><div class="dval" style="color:#FBCF09">'+fmt(r.totalIslas)+'</div></div>'+
-            '<div class="dcard"><div class="dlabel">Total Recaudado</div><div class="dval">'+fmt(r.totalRecaudado)+'</div></div>'+
-            '<div class="dcard"><div class="dlabel">Diferencia</div><div class="dval '+dc(r.diferencia)+'">'+fmtD(r.diferencia)+'</div></div>'+
-        '</div>'+
-        '<div class="dsec">Islas</div>'+
-        '<table class="dtable"><thead><tr><th>Isla</th><th>Combustible</th><th>Lubricantes</th><th>Otros</th></tr></thead><tbody>'+(islas||'<tr><td colspan="4" style="text-align:center;color:#5a6080">Sin datos</td></tr>')+'</tbody></table>'+
-        '<div class="dsec">Pagos</div>'+
-        '<table class="dtable"><thead><tr><th>Tipo</th><th>Descripcion</th><th>Valor</th></tr></thead><tbody>'+(pagos||'<tr><td colspan="3" style="text-align:center;color:#5a6080">Sin datos</td></tr>')+'</tbody></table>'+
-        (r.observaciones?'<div class="dsec">Observaciones</div><p style="color:#8a90a8;font-size:14px">'+r.observaciones+'</p>':'');
+    document.getElementById('mcontent').innerHTML = `
+        <h2 style="margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">Detalle de Rendición</h2>
+        <p><b>Empleado:</b> ${r.nombre}</p>
+        <p><b>Fecha:</b> ${r.fecha} (Turno ${r.turno})</p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin:20px 0;">
+            <div style="background:#252836; padding:15px; border-radius:10px;">
+                <small>VENTA TOTAL</small><br><b style="font-size:18px;">${fmt(r.totalIslas)}</b>
+            </div>
+            <div style="background:#252836; padding:15px; border-radius:10px;">
+                <small>DIFERENCIA</small><br><b style="font-size:18px;" class="${dc(r.diferencia)}">${fmtD(r.diferencia)}</b>
+            </div>
+        </div>
+        <p><b>Observaciones:</b> ${r.observaciones || 'Sin notas'}</p>
+        <button onclick="cerrarModal()" style="width:100%; margin-top:20px; padding:10px; background:#DD1D21; color:#fff; border:none; border-radius:8px; cursor:pointer;">Cerrar</button>
+    `;
     document.getElementById('modal').classList.add('open');
+}
+
+function borrar(id) {
+    if(confirm("¿Seguro que quieres eliminar este registro permanentemente?")) {
+        db.collection("rendiciones").doc(id).delete().then(() => cargarDatos());
+    }
 }
 
 function cerrarModal() { document.getElementById('modal').classList.remove('open'); }
 
-function filtrar() {
-    var q=document.getElementById('buscador').value.toLowerCase();
-    renderTabla(todos.filter(function(r){
-        return (r.nombre||'').toLowerCase().indexOf(q)>=0 || (r.fecha||'').indexOf(q)>=0 || String(r.turno||'').indexOf(q)>=0;
-    }));
-}
-
 function exportarCSV() {
-    if(!todos.length){alert('No hay datos');return;}
-    var cols=['Fecha','Nombre','Turno','N Empleado','Total Islas','Efectivo','Creditos','Tarjetas','Shell Card','App Shell','Total Recaudado','Diferencia','Email','Observaciones'];
-    var rows=todos.map(function(r){return [r.fecha,r.nombre,r.turno,r.numero,r.totalIslas,r.totalDepositos,r.totalCreditos,r.totalTarjetas,r.totalShellCard,r.totalAppShell,r.totalRecaudado,r.diferencia,r.emailUsuario,r.observaciones].map(function(v){return '"'+(v||'')+'"';}).join(',');});
-    var a=document.createElement('a');
-    a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent([cols.join(',')].concat(rows).join('\n'));
-    a.download='rendiciones-shell.csv'; a.click();
+    if(!todos.length) return;
+    var cols = ['Fecha','Nombre','Turno','Venta','Recaudado','Diferencia'];
+    var rows = todos.map(r => [r.fecha, r.nombre, r.turno, r.totalIslas, r.totalRecaudado, r.diferencia].join(','));
+    var csv = "\uFEFF" + cols.join(',') + '\n' + rows.join('\n');
+    var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "Rendiciones_Pro_Export.csv";
+    link.click();
 }
 </script>
 </body>
