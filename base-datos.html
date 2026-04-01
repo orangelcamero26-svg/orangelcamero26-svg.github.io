@@ -11,27 +11,23 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
     <style>
+        /* ===================== ESTILOS BASE ===================== */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: #0f1117; color: #f0f2f8; min-height: 100vh; }
 
-        /* ===================== BANNER BIENVENIDA ===================== */
+        /* BANNER BIENVENIDA */
         .welcome-banner {
             position: fixed;
             top: 0; left: 0; right: 0;
             background: linear-gradient(90deg, #FBCF09 0%, #DD1D21 100%);
-            color: #111;
-            padding: 12px;
-            text-align: center;
-            font-weight: 800;
-            font-size: 14px;
-            z-index: 10000;
-            display: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            color: #111; padding: 12px; text-align: center;
+            font-weight: 800; font-size: 14px; z-index: 10000;
+            display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             animation: slideDown 0.5s ease-out;
         }
         @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
-        /* ===================== LOGIN ===================== */
+        /* LOGIN */
         #login-screen {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 100vh; padding: 24px; position: fixed; inset: 0; z-index: 9999; background: #0f1117;
@@ -39,87 +35,70 @@
         #login-screen.hidden { display: none; }
         .login-card {
             background: #1a1d26; border: 1px solid rgba(255,255,255,0.08); border-radius: 24px;
-            padding: 32px 28px; width: 100%; max-width: 380px; position: relative; z-index: 1;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+            padding: 32px 28px; width: 100%; max-width: 380px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
         }
         .login-logo-icon {
             width: 72px; height: 72px; background: linear-gradient(135deg, #B01519, #DD1D21);
             border-radius: 20px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 8px 24px rgba(221,29,33,0.4); border: 2px solid #FBCF09; font-size: 32px; margin: 0 auto 20px;
+            border: 2px solid #FBCF09; font-size: 32px; margin: 0 auto 20px;
         }
         .login-title { font-size: 24px; font-weight: 800; text-align: center; }
         .login-sub { font-size: 14px; color: #5a6080; text-align: center; margin-bottom: 20px; }
-        .admin-badge { background: rgba(251,207,9,0.12); border: 1px solid rgba(251,207,9,0.3); color: #FBCF09; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; display: block; width: fit-content; margin: 0 auto 20px; }
-
-        .login-form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-        .login-label { font-size: 11px; font-weight: 700; color: #8a90a8; text-transform: uppercase; }
         .login-input {
             background: #252836; border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px;
-            color: #f0f2f8; font-size: 15px; padding: 13px 15px; width: 100%; outline: none;
+            color: #f0f2f8; font-size: 15px; padding: 13px 15px; width: 100%; outline: none; margin-bottom: 12px;
         }
-        .login-input:focus { border-color: #DD1D21; }
         .btn-login {
             width: 100%; background: linear-gradient(135deg, #B01519, #DD1D21);
             border: none; color: #fff; font-size: 15px; font-weight: 700; padding: 14px;
-            border-radius: 12px; cursor: pointer; margin-top: 6px; box-shadow: 0 4px 16px rgba(221,29,33,0.4);
+            border-radius: 12px; cursor: pointer; box-shadow: 0 4px 16px rgba(221,29,33,0.4);
         }
 
-        /* ===================== APP INTERFACE ===================== */
+        /* APP INTERFACE */
         #app-screen { display: none; }
         #app-screen.visible { display: block; }
         .header { background: linear-gradient(135deg, #B01519, #DD1D21); border-bottom: 2.5px solid #FBCF09; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-        .header-title { font-size: 20px; font-weight: 800; }
-        .header-sub { font-size: 12px; color: rgba(255,255,255,0.7); }
-
+        
         .toolbar { padding: 16px 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: #1a1d26; border-bottom: 1px solid rgba(255,255,255,0.06); }
-        .search-input { background: #252836; border: 1.5px solid rgba(255,255,255,0.08); border-radius: 8px; color: #f0f2f8; padding: 10px 14px; font-size: 14px; outline: none; }
-        .btn-toolbar { background: #252836; border: 1.5px solid rgba(255,255,255,0.08); color: #fff; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .btn-toolbar.green { border-color: #22c55e; color: #22c55e; }
+        .search-input { background: #252836; border: 1.5px solid rgba(255,255,255,0.08); border-radius: 8px; color: #f0f2f8; padding: 10px 14px; outline: none; }
+        
+        /* RESUMEN CARDS */
+        .resumen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding: 20px 24px; }
+        .card-resumen { background: #1a1d26; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; border-left: 4px solid #FBCF09; }
+        .card-resumen.grand-total { background: linear-gradient(135deg, #2a2d3e 0%, #1a1d26 100%); border-left: 6px solid #DD1D21; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .card-resumen h4 { color: #FBCF09; margin-bottom: 10px; font-size: 14px; text-transform: uppercase; }
+        .card-resumen.grand-total h4 { color: #fff; font-size: 16px; }
+        .resumen-val { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+        .resumen-total-dif { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); font-weight: 700; }
 
         /* TABLA */
-        .table-wrap { overflow-x: auto; padding: 20px 24px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
+        .table-wrap { overflow-x: auto; padding: 0 24px 40px 24px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
         thead th { background: #1a1d26; color: #8a90a8; padding: 12px; text-align: left; border-bottom: 2px solid rgba(255,255,255,0.06); }
-        tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: 0.2s; }
-        tbody tr:hover { background: rgba(255,255,255,0.03); }
-        td { padding: 12px; }
-        .pos { color: #22c55e; font-weight: 800; }
-        .neg { color: #ef4444; font-weight: 800; }
-        .cero { color: #FBCF09; font-weight: 800; }
+        td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .pos { color: #22c55e; font-weight: 700; }
+        .neg { color: #ef4444; font-weight: 700; }
+        .cero { color: #FBCF09; }
 
         /* MODAL */
         #modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
         #modal.open { display: flex; }
-        .mbox { background: #1a1d26; border-radius: 18px; width: 100%; max-width: 640px; padding: 24px; max-height: 90vh; overflow-y: auto; }
-        
-        /* UTILIDADES */
-        .spinner { width: 30px; height: 30px; border: 3px solid rgba(221,29,33,0.2); border-top-color: #DD1D21; border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg) } }
+        .mbox { background: #1a1d26; border-radius: 18px; width: 100%; max-width: 500px; padding: 24px; }
     </style>
 </head>
 <body>
 
-<div id="welcome-banner" class="welcome-banner">
-    <span id="welcome-text"></span>
-</div>
+<div id="welcome-banner" class="welcome-banner"><span id="welcome-text"></span></div>
 
 <div id="login-screen">
     <div class="login-card">
         <div class="login-logo-icon">⚡</div>
         <div class="login-title">Estación Digital</div>
         <div class="login-sub">Rendición Pro</div>
-        <span class="admin-badge">🔒 Acceso Administrador</span>
-
-        <div class="login-form-group">
-            <span class="login-label">Correo</span>
-            <input type="email" class="login-input" id="login-email" placeholder="admin@ejemplo.com" />
-        </div>
-        <div class="login-form-group">
-            <span class="login-label">Contraseña</span>
-            <input type="password" class="login-input" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')iniciarSesion()" />
-        </div>
-        <button class="btn-login" id="btn-login" onclick="iniciarSesion()">Ingresar</button>
-        <div id="login-error" style="color:#ef4444; font-size:13px; margin-top:10px; text-align:center; display:none;"></div>
+        <input type="email" class="login-input" id="login-email" placeholder="Correo electrónico" />
+        <input type="password" class="login-input" id="login-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')iniciarSesion()" />
+        <button class="btn-login" onclick="iniciarSesion()">Ingresar al Sistema</button>
+        <p id="login-error" style="color:#ef4444; font-size:12px; margin-top:10px; text-align:center; display:none;"></p>
     </div>
 </div>
 
@@ -127,52 +106,35 @@
     <div class="header">
         <div>
             <div class="header-title">Estación Digital</div>
-            <div class="header-sub" id="header-sub">Rendición Pro — Historial General</div>
+            <div class="header-sub">Panel de Auditoría Financiera</div>
         </div>
-        <div style="display:flex; gap:15px; align-items:center;">
-            <span id="user-display" style="font-weight:700; font-size:13px;"></span>
-            <button onclick="cerrarSesion()" style="background:none; border:1px solid #fff; color:#fff; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">Cerrar Sesión</button>
-        </div>
+        <button onclick="cerrarSesion()" style="background:none; border:1px solid #fff; color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">Cerrar Sesión</button>
     </div>
 
     <div class="toolbar">
         <input type="text" class="search-input" id="f-nombre" placeholder="Nombre empleado..." oninput="filtrar()" style="width: 180px;" />
-        
-        <select class="search-input" id="f-mes" onchange="filtrar()" style="width: 140px;">
+        <select class="search-input" id="f-mes" onchange="filtrar()">
             <option value="">Todos los meses</option>
             <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
             <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
             <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
             <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
         </select>
-
-        <select class="search-input" id="f-año" onchange="filtrar()" style="width: 100px;">
-            <option value="">Todos</option>
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
+        <select class="search-input" id="f-año" onchange="filtrar()">
+            <option value="">Todos los años</option>
+            <option value="2025">2025</option><option value="2026">2026</option>
         </select>
-
-        <button class="btn-toolbar" onclick="cargarDatos()">🔄 Actualizar</button>
-        <button class="btn-toolbar green" onclick="exportarCSV()">📊 Exportar CSV</button>
-        <span id="total-reg" style="margin-left:auto; font-size:12px; color:#5a6080;"></span>
+        <button class="search-input" style="cursor:pointer; background:#252836;" onclick="cargarDatos()">🔄</button>
+        <button class="search-input" style="cursor:pointer; background:#22c55e; color:#fff; border:none;" onclick="exportarCSV()">📥 Exportar CSV</button>
     </div>
 
-    <div id="carga" style="display:none; flex-direction:column; align-items:center; padding:50px;">
-        <div class="spinner"></div>
-        <p style="margin-top:15px; color:#5a6080;">Cargando base de datos...</p>
-    </div>
+    <div id="resumen-container" class="resumen-grid"></div>
 
-    <div id="table-wrap" class="table-wrap">
+    <div class="table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>Fecha</th>
-                    <th>Nombre</th>
-                    <th>Turno</th>
-                    <th>Venta Total</th>
-                    <th>Recaudado</th>
-                    <th>Diferencia</th>
-                    <th>Acciones</th>
+                    <th>Fecha</th><th>Empleado</th><th>Turno</th><th>Venta Total</th><th>Recaudado</th><th>Diferencia</th><th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="tbody"></tbody>
@@ -185,8 +147,8 @@
 </div>
 
 <script>
-// CONFIGURACIÓN FIREBASE (Mantenida de tu código original)
-var firebaseConfig = {
+// CONFIGURACIÓN FIREBASE
+const firebaseConfig = {
     apiKey: "AIzaSyDt0K2X84fWd7QcN1ggxRapw1rnqSDj8n8",
     authDomain: "shell-rendicion.firebaseapp.com",
     projectId: "shell-rendicion",
@@ -195,151 +157,151 @@ var firebaseConfig = {
     appId: "1:210880588861:web:60d3248e25e2853ba88e54"
 };
 firebase.initializeApp(firebaseConfig);
-var db = firebase.firestore();
-var auth = firebase.auth();
-var todos = [];
+const db = firebase.firestore();
+const auth = firebase.auth();
+let todos = [];
 
-var ADMINS = ["orangelcamero26@gmail.com"];
+// FORMATOS
+const fmt = (n) => '$' + Math.floor(Number(n||0)).toLocaleString('es-CL');
+const fmtD = (n) => {
+    let v = Math.floor(Number(n||0));
+    return (v > 0 ? '+' : '') + v.toLocaleString('es-CL');
+};
+const dc = (n) => n < 0 ? 'neg' : n > 0 ? 'pos' : 'cero';
 
-// FORMATEO CHILENO (CLP)
-function fmt(n) { return '$' + Math.floor(Number(n||0)).toLocaleString('es-CL'); }
-function fmtD(n) { 
-    var v = Math.floor(Number(n||0));
-    if(v > 0) return '+$' + v.toLocaleString('es-CL');
-    if(v < 0) return '-$' + Math.abs(v).toLocaleString('es-CL');
-    return '$0';
-}
-function dc(n) { return n < 0 ? 'neg' : n > 0 ? 'pos' : 'cero'; }
-
-// AUTENTICACIÓN
-auth.onAuthStateChanged(function(user) {
+// AUTH
+auth.onAuthStateChanged(user => {
     if (user) {
-        var email = user.email.toLowerCase();
-        if (ADMINS.includes(email)) {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-screen').classList.add('visible');
-            document.getElementById('user-display').textContent = email.split('@')[0].toUpperCase();
-            
-            // BANNER BIENVENIDA
-            var banner = document.getElementById('welcome-banner');
-            document.getElementById('welcome-text').textContent = "👋 ¡Hola, " + email.split('@')[0].toUpperCase() + "! Bienvenido a Estación Digital.";
-            banner.style.display = 'block';
-            setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.style.display = 'none', 800); }, 4000);
-
-            cargarDatos();
-        } else {
-            alert("No tienes permisos de administrador.");
-            auth.signOut();
-        }
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-screen').classList.add('visible');
+        mostrarBienvenida(user.email);
+        cargarDatos();
     } else {
         document.getElementById('login-screen').classList.remove('hidden');
         document.getElementById('app-screen').classList.remove('visible');
     }
 });
 
-async function iniciarSesion() {
-    var email = document.getElementById('login-email').value;
-    var pass = document.getElementById('login-password').value;
-    try {
-        await auth.signInWithEmailAndPassword(email, pass);
-    } catch (e) {
-        var err = document.getElementById('login-error');
-        err.style.display = 'block';
-        err.textContent = "Error: Credenciales incorrectas.";
-    }
+function mostrarBienvenida(email) {
+    const nom = email.split('@')[0].toUpperCase();
+    const banner = document.getElementById('welcome-banner');
+    document.getElementById('welcome-text').textContent = `👋 ¡Hola, ${nom}! Bienvenido a Estación Digital.`;
+    banner.style.display = 'block';
+    setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.style.display = 'none', 800); }, 4000);
 }
 
+async function iniciarSesion() {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-password').value;
+    try { await auth.signInWithEmailAndPassword(e, p); } 
+    catch (err) { document.getElementById('login-error').style.display='block'; document.getElementById('login-error').textContent="Error de acceso."; }
+}
 function cerrarSesion() { auth.signOut(); }
 
-// GESTIÓN DE DATOS
+// LOGICA DE DATOS
 function cargarDatos() {
-    document.getElementById('carga').style.display = 'flex';
     db.collection("rendiciones").orderBy("fechaGuardado", "desc").get().then(snap => {
         todos = [];
         snap.forEach(doc => todos.push({id: doc.id, ...doc.data()}));
-        filtrar(); // Aplica filtros y renderiza
-        document.getElementById('carga').style.display = 'none';
+        filtrar();
     });
 }
 
 function filtrar() {
-    var nom = document.getElementById('f-nombre').value.toLowerCase();
-    var mes = document.getElementById('f-mes').value;
-    var año = document.getElementById('f-año').value;
+    const nom = document.getElementById('f-nombre').value.toLowerCase();
+    const mes = document.getElementById('f-mes').value;
+    const año = document.getElementById('f-año').value;
 
-    var filtrados = todos.filter(r => {
-        var cumpleNom = (r.nombre || '').toLowerCase().includes(nom);
-        var f = r.fecha || '';
-        var partes = f.includes('-') ? f.split('-') : f.split('/');
-        var rMes = f.includes('-') ? partes[1] : partes[1];
-        var rAño = f.includes('-') ? partes[0] : partes[2];
-        
-        return cumpleNom && (mes === "" || rMes === mes) && (año === "" || rAño === año);
+    let filtrados = todos.filter(r => {
+        const f = r.fecha || '';
+        const partes = f.includes('-') ? f.split('-') : f.split('/');
+        const rMes = f.includes('-') ? partes[1] : partes[1];
+        const rAño = f.includes('-') ? partes[0] : partes[2];
+        return (r.nombre || '').toLowerCase().includes(nom) && (mes==="" || rMes===mes) && (año==="" || rAño===año);
     });
 
-    // ORDENAR POR MAYOR DESCUADRE (Diferencia absoluta)
-    filtrados.sort((a, b) => Math.abs(Number(b.diferencia || 0)) - Math.abs(Number(a.diferencia || 0)));
+    // Ordenar por descuadre absoluto
+    filtrados.sort((a,b) => Math.abs(Number(b.diferencia||0)) - Math.abs(Number(a.diferencia||0)));
 
     renderTabla(filtrados);
+    calcularResumen(filtrados);
 }
 
 function renderTabla(lista) {
-    var tbody = document.getElementById('tbody');
-    document.getElementById('total-reg').textContent = lista.length + " registros encontrados";
-    tbody.innerHTML = lista.map(r => `
+    document.getElementById('tbody').innerHTML = lista.map(r => `
         <tr>
-            <td>${r.fecha || '-'}</td>
-            <td style="font-weight:700;">${r.nombre || '-'}</td>
-            <td>T${r.turno || '-'}</td>
+            <td>${r.fecha}</td>
+            <td style="font-weight:700">${r.nombre}</td>
+            <td>T${r.turno}</td>
             <td>${fmt(r.totalIslas)}</td>
             <td>${fmt(r.totalRecaudado)}</td>
             <td class="${dc(r.diferencia)}">${fmtD(r.diferencia)}</td>
             <td>
-                <button onclick="verDetalle('${r.id}')" style="cursor:pointer; background:none; border:none; font-size:16px;">👁️</button>
-                <button onclick="borrar('${r.id}')" style="cursor:pointer; background:none; border:none; font-size:16px; margin-left:10px;">🗑️</button>
+                <button onclick="verDetalle('${r.id}')" style="cursor:pointer; background:none; border:none">👁️</button>
             </td>
         </tr>
     `).join('');
 }
 
+function calcularResumen(lista) {
+    const res = {};
+    let gV = 0, gR = 0, gD = 0, gT = 0;
+
+    lista.forEach(r => {
+        const n = r.nombre || 'N/A';
+        const v = Number(r.totalIslas||0), rec = Number(r.totalRecaudado||0), d = Number(r.diferencia||0);
+        if(!res[n]) res[n] = {v:0, r:0, d:0, t:0};
+        res[n].v+=v; res[n].r+=rec; res[n].d+=d; res[n].t++;
+        gV+=v; gR+=rec; gD+=d; gT++;
+    });
+
+    let html = gT > 0 ? `
+        <div class="card-resumen grand-total">
+            <h4>📊 TOTAL GENERAL</h4>
+            <div class="resumen-val"><span>Turnos:</span> <span>${gT}</span></div>
+            <div class="resumen-val"><span>Venta:</span> <span>${fmt(gV)}</span></div>
+            <div class="resumen-val resumen-total-dif"><span>Balance Estación:</span> <span class="${dc(gD)}">${fmtD(gD)}</span></div>
+        </div>
+    ` : '';
+
+    html += Object.keys(res).map(n => `
+        <div class="card-resumen">
+            <h4>👤 ${n}</h4>
+            <div class="resumen-val"><span>Turnos:</span> <span>${res[n].t}</span></div>
+            <div class="resumen-val"><span>Venta:</span> <span>${fmt(res[n].v)}</span></div>
+            <div class="resumen-val resumen-total-dif"><span>Balance:</span> <span class="${dc(res[n].d)}">${fmtD(res[n].d)}</span></div>
+        </div>
+    `).join('');
+
+    document.getElementById('resumen-container').innerHTML = html;
+}
+
 function verDetalle(id) {
-    var r = todos.find(x => x.id === id);
-    if(!r) return;
+    const r = todos.find(x => x.id === id);
     document.getElementById('mcontent').innerHTML = `
-        <h2 style="margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">Detalle de Rendición</h2>
+        <h3 style="margin-bottom:15px">Detalle de Turno</h3>
         <p><b>Empleado:</b> ${r.nombre}</p>
         <p><b>Fecha:</b> ${r.fecha} (Turno ${r.turno})</p>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin:20px 0;">
-            <div style="background:#252836; padding:15px; border-radius:10px;">
-                <small>VENTA TOTAL</small><br><b style="font-size:18px;">${fmt(r.totalIslas)}</b>
-            </div>
-            <div style="background:#252836; padding:15px; border-radius:10px;">
-                <small>DIFERENCIA</small><br><b style="font-size:18px;" class="${dc(r.diferencia)}">${fmtD(r.diferencia)}</b>
-            </div>
-        </div>
-        <p><b>Observaciones:</b> ${r.observaciones || 'Sin notas'}</p>
-        <button onclick="cerrarModal()" style="width:100%; margin-top:20px; padding:10px; background:#DD1D21; color:#fff; border:none; border-radius:8px; cursor:pointer;">Cerrar</button>
+        <hr style="margin:15px 0; border:0; border-top:1px solid #333">
+        <p>Venta: ${fmt(r.totalIslas)}</p>
+        <p>Recaudado: ${fmt(r.totalRecaudado)}</p>
+        <p>Diferencia: <b class="${dc(r.diferencia)}">${fmtD(r.diferencia)}</b></p>
+        <p style="margin-top:10px"><b>Notas:</b> ${r.observaciones || 'Sin notas'}</p>
+        <button onclick="cerrarModal()" style="width:100%; margin-top:20px; padding:12px; background:#DD1D21; color:#fff; border:none; border-radius:8px; cursor:pointer;">Cerrar Ventana</button>
     `;
     document.getElementById('modal').classList.add('open');
 }
-
-function borrar(id) {
-    if(confirm("¿Seguro que quieres eliminar este registro permanentemente?")) {
-        db.collection("rendiciones").doc(id).delete().then(() => cargarDatos());
-    }
-}
-
 function cerrarModal() { document.getElementById('modal').classList.remove('open'); }
 
 function exportarCSV() {
     if(!todos.length) return;
-    var cols = ['Fecha','Nombre','Turno','Venta','Recaudado','Diferencia'];
-    var rows = todos.map(r => [r.fecha, r.nombre, r.turno, r.totalIslas, r.totalRecaudado, r.diferencia].join(','));
-    var csv = "\uFEFF" + cols.join(',') + '\n' + rows.join('\n');
-    var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-    var link = document.createElement("a");
+    const rows = [["Fecha","Nombre","Turno","Venta","Recaudado","Diferencia"]];
+    todos.forEach(r => rows.push([r.fecha, r.nombre, r.turno, r.totalIslas, r.totalRecaudado, r.diferencia]));
+    const csv = "\uFEFF" + rows.map(e => e.join(",")).join("\n");
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "Rendiciones_Pro_Export.csv";
+    link.download = "Rendicion_Pro_Reporte.csv";
     link.click();
 }
 </script>
