@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#f8fafc" />
+  <title>Estacion Digital</title>
+
+  <!-- PWA: Ícono pantalla de inicio -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="logo-nuevo.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="logo-nuevo.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="logo-nuevo.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Estacion Digital" />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN for rapid development -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+            },
+            alert: '#ef4444',
+            success: '#10b981',
+            warning: '#f59e0b',
+          },
+          boxShadow: {
+            'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+            'float': '0 10px 40px -10px rgba(0, 0, 0, 0.08)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD84fWd7QcNIggcRapw1rnqSDj8n8",
+      authDomain: "shell-rendicion.firebaseapp.com",
+      projectId: "shell-rendicion",
+      storageBucket: "shell-rendicion.firebasestorage.app",
+      messagingSenderId: "210880588861",
+      appId: "1:210880588861:web:60d3248e25e2853ba88e54"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true })
+      .catch(err => {
+        if (err.code === 'failed-precondition') console.warn('Offline: múltiples pestañas abiertas.');
+        else if (err.code === 'unimplemented') console.warn('Offline: navegador no compatible.');
+      });
+    
+    // UPDATED FIREBASE SAVE LOGIC: UPSERT EN VEZ DE CREATE MULTIPLE
+    window.guardarEnFirebase = async function(datos) {
+      try {
+        // Generar un ID único basado en fecha, turno, y numero/nombre de empleado para evitar duplicados
+        const empID = (datos.numero || datos.nombre || "desc").replace(/\s+/g, '').toUpperCase();
+        const docId = `R_${datos.fecha}_T${datos.turno}_${empID}`;
+        
+        const docRef = db.collection("rendiciones").doc(docId);
+        await docRef.set({ 
+            ...datos, 
+            fechaGuardado: firebase.firestore.FieldValue.serverTimestamp() 
+        }, { merge: true });
+        
+        return docId;
+      } catch(e) { console.error("Firebase error:", e); return null; }
+    };
+    window.firebaseReady = true;
+  </script>
+
+  <style type="text/tailwindcss">
+    body {
+      background-color: #f8fafc; /*slate-50*/
+      color: #0f172a; /*slate-900*/
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+    
+    /* Hide scrollbar for cleaner UI */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+    
+    /* custom input styles */
+    .input-clean {
+      @apply w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-sm outline-none transition-all duration-200 shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+    }
+    
+    .label-micro {
+      @apply block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5;
+    }
+    
+    .card-clean {
+      @apply bg-white rounded-2xl p-5 mb-4 border-2 border-brand-500 shadow-[0_0_12px_rgba(14,165,233,0.15)];
+    }
+
+    /* Tabs handling */
+    .tab-page {
+      display: none;
+      animation: fadeSlide .25s ease-out;
+    }
+    .tab-page.active { display: block; }
+    
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Bottom Nav Styles */
+    .nav-item {
+      @apply flex flex-col items-center justify-center gap-0.5 py-2 px-1 text-slate-400 relative transition-colors duration-200 h-full;
+    }
+    .nav-item.active {
+      @apply text-brand-600 font-semibold;
+    }
+    .nav-item.active::before {
+      content: '';
+      @apply absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1 bg-brand-500 rounded-b-full;
+    }
+  </style>
+</head>
+<body class="pb-24 pt-16">
+
+<!-- HEADER -->
+<header class="fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 z-50 px-4 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-11 h-11 rounded-lg overflow-hidden border border-slate-100 shadow-sm">
+      <img src="logo-nuevo.png" alt="Logo" class="w-full h-full object-cover" onerror="this.src='logo-nuevo.png'">
+    </div>
+    <div class="flex flex-col">
+      <h1 class="text-sm font-bold text-slate-800 leading-tight">Estacion Digital</h1>
+      <span class="text-[11px] text-slate-500 font-medium">Rendición Atendedor</span>
+    </div>
+  </div>
+  <div class="flex items-center gap-3">
+    <div id="turno-badge" class="bg-brand-50 text-brand-700 border border-brand-200 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+      T1
+    </div>
+    <button onclick="mostrarAcciones()" class="w-9 h-9 rounded-full bg-slate-50 border border-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-all">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- OVERLAY -->
+<div id="overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] hidden opacity-0 transition-opacity duration-300" onclick="cerrarAcciones()"></div>
+
+<!-- ACTION SHEET -->
+<div id="action-sheet" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl pt-2 pb-8 px-5 z-[210] transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+  <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+  <h3 class="text-sm font-bold text-center text-slate-400 mb-4 tracking-wide uppercase">Acciones Rápidas</h3>
+  
+  <div class="grid grid-cols-2 gap-3">
+    <button onclick="imprimirReporte();cerrarAcciones()" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-[13px] font-semibold p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-colors text-center shadow-sm">
+      <span class="text-2xl text-center">🖨️</span> <span>Exportar PDF</span>
+    </button>
+    <button onclick="window.open('base-datos.html','_blank');cerrarAcciones()" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-[13px] font-semibold p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-colors text-center shadow-sm">
+      <span class="text-2xl text-center">🗄️</span> <span>Base de Datos</span>
+    </button>
+    <button onclick="compartirReporte();cerrarAcciones()" class="w-full bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-[13px] font-semibold p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-colors text-center shadow-sm">
+      <span class="text-2xl text-center">📤</span> <span>Compartir</span>
+    </button>
+    <button onclick="limpiarFormulario(true);cerrarAcciones()" class="w-full bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 text-[13px] font-semibold p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-colors text-center shadow-sm">
+      <span class="text-2xl text-center">🗑️</span> <span>Limpiar Todo</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="w-full max-w-md mx-auto px-4 pt-4">
+
+  <!-- STEPPER PROGRESS -->
+  <div class="mb-6 mt-2">
+    <div class="flex items-center justify-between relative px-2">
+      <!-- Línea conectora -->
+      <div class="absolute left-4 right-4 top-3 h-[2px] bg-slate-200 z-0"></div>
+      
+      <!-- Steps -->
+      <div class="relative z-10 flex flex-col items-center gap-1.5 step-item cursor-pointer" id="step-1" onclick="irTab('tab-turno')">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-brand-500 text-white step-circle shadow-[0_0_8px_rgba(14,165,233,0.6)] transition-all">1</div>
+        <span class="text-[9px] font-extrabold text-brand-600 transition-colors step-label">Turno</span>
+      </div>
+      <div class="relative z-10 flex flex-col items-center gap-1.5 step-item cursor-pointer" id="step-2" onclick="irTab('tab-islas')">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-slate-400 step-circle transition-all border border-slate-200">2</div>
+        <span class="text-[9px] font-bold text-slate-400 transition-colors step-label">Islas</span>
+      </div>
+      <div class="relative z-10 flex flex-col items-center gap-1.5 step-item cursor-pointer" id="step-3" onclick="irTab('tab-depositos')">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-slate-400 step-circle transition-all border border-slate-200">3</div>
+        <span class="text-[9px] font-bold text-slate-400 transition-colors step-label">Depósitos</span>
+      </div>
+      <div class="relative z-10 flex flex-col items-center gap-1.5 step-item cursor-pointer" id="step-4" onclick="irTab('tab-pagos')">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-slate-400 step-circle transition-all border border-slate-200">4</div>
+        <span class="text-[9px] font-bold text-slate-400 transition-colors step-label">Pagos</span>
+      </div>
+      <div class="relative z-10 flex flex-col items-center gap-1.5 step-item cursor-pointer" id="step-5" onclick="irTab('tab-cuadre')">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-slate-400 step-circle transition-all border border-slate-200">5</div>
+        <span class="text-[9px] font-bold text-slate-400 transition-colors step-label">Cuadre</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: TURNO -->
+  <section class="tab-page active" id="tab-turno">
+    <div class="card-clean">
+      <div class="flex flex-col items-center justify-center gap-2 mb-6 pb-4 border-b border-slate-100 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-brand-600 flex items-center justify-center text-2xl shadow-sm border border-blue-100">👤</div>
+        <h2 class="text-[15px] font-extrabold text-slate-800">Datos del Turno</h2>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="label-micro">Fecha</label>
+          <input type="date" id="fecha" class="input-clean" />
+        </div>
+        
+        <div>
+          <label class="label-micro">Turno</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button class="turno-btn bg-brand-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm ring-2 ring-brand-500 ring-offset-1" data-turno="1" onclick="seleccionarTurno('1')">1</button>
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="2" onclick="seleccionarTurno('2')">2</button>
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="3" onclick="seleccionarTurno('3')">3</button>
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="1M" onclick="seleccionarTurno('1M')">1M</button>
+            
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="2M" onclick="seleccionarTurno('2M')">2M</button>
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="2A" onclick="seleccionarTurno('2A')">2A</button>
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="2AM" onclick="seleccionarTurno('2AM')">2AM</button>
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="3E" onclick="seleccionarTurno('3E')">3E</button>
+            
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="3A" onclick="seleccionarTurno('3A')">3A</button>
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="3M" onclick="seleccionarTurno('3M')">3M</button>
+            <button class="turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200" data-turno="3AM" onclick="seleccionarTurno('3AM')">3AM</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="label-micro">Nombre Atendedor</label>
+          <input type="text" id="nombre" placeholder="Ej. Juan Pérez" class="input-clean" />
+        </div>
+        
+        <div>
+          <label class="label-micro">N° Empleado o RUT</label>
+          <input type="text" id="numero" placeholder="12345678" inputmode="numeric" class="input-clean" />
+        </div>
+      </div>
+    </div>
+
+    <button class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm py-4 rounded-xl shadow-[0_8px_20px_-6px_rgba(2,132,199,0.5)] active:scale-95 transition-all" onclick="irTab('tab-islas')">
+      Siguiente: Configurar Islas ⛽ →
+    </button>
+  </section>
+
+  <!-- TAB: ISLAS -->
+  <section class="tab-page" id="tab-islas">
+    <div class="card-clean mb-6">
+      <div class="flex flex-col items-center justify-center gap-2 mb-6 pb-4 border-b border-slate-100 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-2xl shadow-sm border border-orange-100">⛽</div>
+        <h2 class="text-[15px] font-extrabold text-slate-800">Ventas por Isla</h2>
+      </div>
+      
+      <div id="islas-list" class="space-y-3 mb-4">
+        <!-- Generado dinámicamente -->
+      </div>
+      
+      <button class="w-full py-3 border-2 border-dashed border-orange-200 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-50 active:bg-orange-100 transition-colors" onclick="agregarIsla()">
+        + Añadir Isla
+      </button>
+      
+      <div class="mt-5 p-4 bg-brand-50 border border-brand-100 rounded-xl flex items-center justify-between">
+        <span class="text-xs font-bold text-brand-700 uppercase tracking-wide">Total Recaudado en Islas</span>
+        <span class="text-lg font-bold text-brand-600 font-mono" id="total-islas-display">$0</span>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button class="flex-1 bg-white border border-slate-200 text-slate-600 font-bold text-sm py-3.5 rounded-xl active:bg-slate-50" onclick="irTab('tab-turno')">← Turno</button>
+      <button class="flex-[2] bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm py-3.5 rounded-xl shadow-[0_8px_20px_-6px_rgba(2,132,199,0.5)] active:scale-95 transition-all" onclick="irTab('tab-depositos')">Depósitos 🏦 →</button>
+    </div>
+  </section>
+
+  <!-- TAB: DEPÓSITOS -->
+  <section class="tab-page" id="tab-depositos">
+    <div class="card-clean mb-6">
+      <div class="flex flex-col items-center justify-center gap-2 mb-6 pb-4 border-b border-slate-100 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-sm border border-emerald-100">🏦</div>
+        <h2 class="text-[15px] font-extrabold text-slate-800">Depósitos en Efectivo</h2>
+      </div>
+      
+      <div class="grid grid-cols-[1fr_1fr_40px] gap-2 px-1 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+        <span>N° Documento</span>
+        <span class="text-right">Monto ($)</span>
+        <span></span>
+      </div>
+      
+      <div id="depositos-list" class="space-y-2 mb-4">
+        <!-- Dynamic content -->
+      </div>
+      
+      <button class="w-full py-3 border-2 border-dashed border-emerald-200 text-emerald-600 rounded-xl text-xs font-bold hover:bg-emerald-50 active:bg-emerald-100 transition-colors" onclick="agregarDeposito()">
+        + Añadir Depósito
+      </button>
+      
+      <div class="mt-5 p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between">
+        <span class="text-xs font-bold text-emerald-700 uppercase tracking-wide">Total Efectivo Depositado</span>
+        <span class="text-lg font-bold text-emerald-600 font-mono" id="total-depositos-display">$0</span>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button class="flex-1 bg-white border border-slate-200 text-slate-600 font-bold text-sm py-3.5 rounded-xl active:bg-slate-50" onclick="irTab('tab-islas')">← Islas</button>
+      <button class="flex-[2] bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm py-3.5 rounded-xl shadow-[0_8px_20px_-6px_rgba(2,132,199,0.5)] active:scale-95 transition-all" onclick="irTab('tab-pagos')">Medios de Pago 💳 →</button>
+    </div>
+  </section>
+
+  <!-- TAB: PAGOS -->
+  <section class="tab-page" id="tab-pagos">
+    <div class="card-clean mb-6 p-0 overflow-hidden">
+      <div class="flex flex-col items-center justify-center gap-2 p-5 border-b border-slate-100 bg-white text-center">
+        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl shadow-sm border border-purple-100">💳</div>
+        <h2 class="text-[15px] font-extrabold text-slate-800">Otros Medios de Pago</h2>
+      </div>
+      
+      <div class="bg-emerald-50/50 p-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-xs font-bold text-slate-800">Total Efectivo</h3>
+          <p class="text-[10px] text-slate-500">Previamente registrado</p>
+        </div>
+        <div class="text-lg font-bold text-emerald-600 font-mono" id="total-efectivo-display">$0</div>
+      </div>
+
+      <div class="divide-y divide-slate-100">
+        <!-- Créditos -->
+        <div class="p-5 bg-white">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold text-slate-800">🧾 Créditos</h3>
+            <span class="text-sm font-bold text-slate-600 font-mono" id="total-creditos-display">$0</span>
+          </div>
+          <div id="creditos-list" class="space-y-2 mb-3"></div>
+          <button class="w-full py-2.5 border border-dashed border-slate-300 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors" onclick="agregarFilaPago('creditos')">+ Agregar registro</button>
+        </div>
+
+        <!-- Tarjetas -->
+        <div class="p-5 bg-white">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold text-slate-800">💳 Tarjetas Transbank</h3>
+            <span class="text-sm font-bold text-slate-600 font-mono" id="total-tarjetas-display">$0</span>
+          </div>
+          <div id="tarjetas-list" class="space-y-2 mb-3"></div>
+          <button class="w-full py-2.5 border border-dashed border-slate-300 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors" onclick="agregarFilaPago('tarjetas')">+ Agregar registro</button>
+        </div>
+
+        <!-- Mi Copiloto -->
+        <div class="p-5 bg-white">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold text-slate-800">🛵 Mi Copiloto</h3>
+            <span class="text-sm font-bold text-slate-600 font-mono" id="total-copiloto-display">$0</span>
+          </div>
+          <div id="copiloto-list" class="space-y-2 mb-3"></div>
+          <button class="w-full py-2.5 border border-dashed border-slate-300 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors" onclick="agregarFilaPago('copiloto')">+ Agregar registro</button>
+        </div>
+
+        <!-- App Shell y Shell Card -->
+        <div class="p-5 bg-white">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold text-slate-800">🛢 App Shell y Shell Card</h3>
+            <span class="text-sm font-bold text-slate-600 font-mono" id="total-shellcard-display">$0</span>
+          </div>
+          <div id="shellcard-list" class="space-y-2 mb-3"></div>
+          <button class="w-full py-2.5 border border-dashed border-slate-300 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors" onclick="agregarFilaPago('shellcard')">+ Agregar registro</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button class="flex-1 bg-white border border-slate-200 text-slate-600 font-bold text-sm py-3.5 rounded-xl active:bg-slate-50" onclick="irTab('tab-depositos')">← Depósitos</button>
+      <button class="flex-[2] bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm py-3.5 rounded-xl shadow-[0_8px_20px_-6px_rgba(2,132,199,0.5)] active:scale-95 transition-all" onclick="irTab('tab-cuadre')">Revisar Cuadre 📊 →</button>
+    </div>
+  </section>
+
+  <!-- TAB: CUADRE -->
+  <section class="tab-page" id="tab-cuadre">
+    <div class="card-clean mb-4">
+      <div class="flex flex-col items-center justify-center gap-2 mb-6 pb-4 border-b border-slate-100 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl shadow-sm border border-indigo-100">📊</div>
+        <h2 class="text-[15px] font-extrabold text-slate-800">Cuadre de Caja</h2>
+      </div>
+      
+      <div class="border border-slate-200 rounded-xl overflow-hidden mb-5 divide-y divide-slate-100 bg-white shadow-sm">
+        <div class="flex justify-between p-4 items-center">
+          <span class="text-sm font-bold text-slate-500">Total Ventas Islas</span>
+          <span class="text-lg font-bold text-slate-800 font-mono" id="total-ventas-display">$0</span>
+        </div>
+        
+        <div class="bg-slate-50 p-3 space-y-1">
+          <div class="flex justify-between px-2 py-1.5 items-center"><span class="text-[13px] font-medium text-slate-600">💵 Efectivo</span><span class="text-sm font-bold font-mono text-slate-700" id="cv-efectivo">$0</span></div>
+          <div class="flex justify-between px-2 py-1.5 items-center"><span class="text-[13px] font-medium text-slate-600">🧾 Créditos</span><span class="text-sm font-bold font-mono text-slate-700" id="cv-creditos">$0</span></div>
+          <div class="flex justify-between px-2 py-1.5 items-center"><span class="text-[13px] font-medium text-slate-600">💳 Tarjetas</span><span class="text-sm font-bold font-mono text-slate-700" id="cv-tarjetas">$0</span></div>
+          <div class="flex justify-between px-2 py-1.5 items-center"><span class="text-[13px] font-medium text-slate-600">🛵 Mi Copiloto</span><span class="text-sm font-bold font-mono text-slate-700" id="cv-copiloto">$0</span></div>
+          <div class="flex justify-between px-2 py-1.5 items-center"><span class="text-[13px] font-medium text-slate-600">🛢 App Shell y Shell Card</span><span class="text-sm font-bold font-mono text-slate-700" id="cv-shellcard">$0</span></div>
+        </div>
+
+        <div class="flex justify-between p-4 items-center bg-slate-50">
+          <span class="text-sm font-extrabold text-slate-700">Total Recaudado</span>
+          <span class="text-lg font-extrabold text-slate-800 font-mono" id="total-recaudado-display">$0</span>
+        </div>
+        
+        <div class="flex justify-between p-5 items-center bg-slate-100" id="fila-diferencia">
+          <span class="text-sm font-black text-slate-800 uppercase tracking-wider">Diferencia</span>
+          <span class="text-2xl font-black font-mono" id="diferencia-display">$0</span>
+        </div>
+      </div>
+      
+      <div id="estado-badge" class="hidden text-center py-3 px-4 rounded-xl font-bold text-sm mb-2 shadow-sm border">
+        <span id="estado-texto"></span>
+      </div>
+    </div>
+
+    <div class="card-clean mb-6">
+      <label class="label-micro shadow-none border-none">Observaciones Extra</label>
+      <textarea id="observaciones" rows="3" placeholder="Anota cualquier novedad..." class="input-clean resize-none mt-2 text-sm"></textarea>
+    </div>
+
+    <button id="btn-guardar-bd" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm py-4 rounded-xl shadow-[0_8px_20px_-6px_rgba(2,132,199,0.5)] active:scale-95 transition-all mb-3 flex items-center justify-center gap-2" onclick="guardarRendicionBD()">
+      💾 Guardar Cuadre en Sistema
+    </button>
+    
+    <div id="bd-status" class="hidden text-center text-[11px] font-bold py-2 rounded-lg mb-6"></div>
+
+  </section>
+
+  <!-- FOOTER DESARROLLADOR -->
+  <div class="mt-12 mb-2 w-full flex flex-col items-center justify-center opacity-80 transition-opacity duration-300 hover:opacity-100">
+    <div class="flex items-center gap-3 mb-1.5">
+      <div class="h-[1px] w-8 bg-gradient-to-r from-transparent to-slate-300"></div>
+      <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Diseñado & Desarrollado por</span>
+      <div class="h-[1px] w-8 bg-gradient-to-l from-transparent to-slate-300"></div>
+    </div>
+    <span class="text-[11px] font-black tracking-[0.15em] bg-clip-text text-transparent bg-gradient-to-r from-slate-600 to-slate-900 drop-shadow-sm">
+      ORANGEL CAMERO
+    </span>
+  </div>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 z-50 flex justify-around items-center px-1 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.03)] py-1">
+  <button class="nav-item active flex-1 justify-center" id="nav-turno" onclick="irTab('tab-turno')">
+    <span class="text-lg leading-none">👤</span>
+    <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">Turno</span>
+  </button>
+  <button class="nav-item flex-1 justify-center" id="nav-islas" onclick="irTab('tab-islas')">
+    <span class="text-lg leading-none">⛽</span>
+    <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">Islas</span>
+  </button>
+  <button class="nav-item flex-1 justify-center" id="nav-depositos" onclick="irTab('tab-depositos')">
+    <span class="text-lg leading-none">🏦</span>
+    <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">Depósitos</span>
+  </button>
+  <button class="nav-item flex-1 justify-center" id="nav-pagos" onclick="irTab('tab-pagos')">
+    <span class="text-lg leading-none">💳</span>
+    <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">Pagos</span>
+  </button>
+  <button class="nav-item flex-1 justify-center" id="nav-cuadre" onclick="irTab('tab-cuadre')">
+    <span class="text-lg leading-none">📊</span>
+    <span class="text-[9px] font-extrabold uppercase tracking-wider mt-0.5">Cuadre</span>
+  </button>
+</nav>
+
+<script>
+  // Variables Globales
+  let turnoSeleccionado = '1', islaIdCounter = 1, depositoIdCounter = 1, tabActual = 'tab-turno';
+  const pagoCounters = { creditos: 1, copiloto: 1, shellcard: 1, tarjetas: 1 };
+
+  // Formateadores
+  function parseMonto(s) { if (!s) return 0; const n = parseFloat(s.toString().replace(/\./g,'').replace(/,/g,'').replace(/\$/g,'').replace(/-/g,'').trim()); return isNaN(n) ? 0 : n; }
+  function formatMonto(n) { if (n === 0) return '0'; return Math.abs(Math.floor(n)).toLocaleString('es-CL'); }
+  function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+  function setVal(id, v) { const el = document.getElementById(id); if (el && v) el.value = v; }
+
+  // Inicialización
+  document.addEventListener('DOMContentLoaded', () => {
+    const hoy = new Date().toISOString().split('T')[0];
+    const estadoExistente = cargarEstado();
+    if (estadoExistente) {
+      const fechaGuardada = document.getElementById('fecha').value;
+      if (fechaGuardada !== hoy) limpiarFormulario(false);
+    } else {
+      inicializarFormulario();
+      setFechaHoy();
+    }
+    calcular();
+  });
+
+  function setFechaHoy() { const el = document.getElementById('fecha'); if (el) el.value = new Date().toISOString().split('T')[0]; }
+
+  function inicializarFormulario() {
+    document.getElementById('islas-list').innerHTML = ''; islaIdCounter = 1; agregarIsla();
+    document.getElementById('depositos-list').innerHTML = '';
+    depositoIdCounter = 1;
+    agregarDeposito(); agregarDeposito();
+    ['creditos','tarjetas','copiloto','shellcard'].forEach(t => agregarFilaPago(t));
+  }
+
+  // Navegación
+  function irTab(id) {
+    document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    document.getElementById(id)?.classList.add('active');
+    document.getElementById('nav-' + id.replace('tab-', ''))?.classList.add('active');
+    
+    // Actualizar progreso
+    const steps = ['tab-turno', 'tab-islas', 'tab-depositos', 'tab-pagos', 'tab-cuadre'];
+    const idx = steps.indexOf(id);
+    steps.forEach((stepId, i) => {
+      const el = document.getElementById('step-' + (i + 1));
+      if (!el) return;
+      const circle = el.querySelector('.step-circle');
+      const label = el.querySelector('.step-label');
+      
+      if (i === idx) {
+        circle.className = "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-brand-500 text-white step-circle shadow-[0_0_8px_rgba(14,165,233,0.6)] transition-all";
+        label.className = "text-[9px] font-extrabold text-brand-600 transition-colors step-label";
+      } else if (i < idx) {
+        circle.className = "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-brand-100 text-brand-600 transition-all step-circle border border-transparent";
+        label.className = "text-[9px] font-bold text-slate-500 transition-colors step-label";
+      } else {
+        circle.className = "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-slate-400 transition-all step-circle border border-slate-200";
+        label.className = "text-[9px] font-bold text-slate-400 transition-colors step-label";
+      }
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    tabActual = id; 
+    calcular();
+  }
+
+  // Lógica Turno
+  function seleccionarTurno(t) {
+    turnoSeleccionado = String(t);
+    document.querySelectorAll('.turno-btn').forEach(b => {
+      if(b.dataset.turno === String(t)) {
+        b.className = "turno-btn bg-brand-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm ring-2 ring-brand-500 ring-offset-1";
+      } else {
+        b.className = "turno-btn bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs border border-slate-200";
+      }
+    });
+    const badge = document.getElementById('turno-badge');
+    if (badge) badge.textContent = 'T' + t;
+    guardarEstado();
+  }
+
+  // Lógica Islas
+  function agregarIsla() {
+    const id = islaIdCounter++;
+    const c = document.getElementById('islas-list');
+    if (!c) return;
+    const row = document.createElement('div');
+    row.className = 'bg-white border text-sm border-slate-100 rounded-xl p-3 mb-2 shadow-sm isla-row';
+    row.id = `isla-row-${id}`;
+    row.innerHTML = `
+      <div class="flex items-center justify-between mb-3 border-b border-slate-50 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center text-xs font-bold text-slate-500">${id}</span>
+          <span class="font-bold text-slate-700">Isla ${id}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-brand-600 font-mono isla-total" id="isla-${id}-total">$0</span>
+          <button class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center font-bold text-lg" onclick="eliminarIsla(${id})">×</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Combustible</label><input type="text" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 text-right py-2 text-xs font-mono outline-none focus:border-brand-300" id="isla-${id}-comb" placeholder="0" inputmode="numeric" oninput="calcularFilaIsla(${id})" /></div>
+        <div><label class="block text-[9px] font-bold text-slate-400 uppercase mb-1">No Combustibles</label><input type="text" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 text-right py-2 text-xs font-mono outline-none focus:border-brand-300" id="isla-${id}-nocomb" placeholder="0" inputmode="numeric" oninput="calcularFilaIsla(${id})" /></div>
+      </div>`;
+    c.appendChild(row);
+  }
+
+  function eliminarIsla(id) {
+    document.getElementById(`isla-row-${id}`)?.remove();
+    calcular();
+  }
+
+  function calcularFilaIsla(n) {
+    const c = parseMonto(document.getElementById(`isla-${n}-comb`)?.value);
+    const nc = parseMonto(document.getElementById(`isla-${n}-nocomb`)?.value);
+    const el = document.getElementById(`isla-${n}-total`);
+    if (el) el.textContent = '$' + formatMonto(c + nc);
+    calcular();
+  }
+
+  function getTotalIslas() {
+    let t = 0;
+    document.querySelectorAll('.isla-total').forEach(el => t += parseMonto(el.textContent));
+    return t;
+  }
+
+  // Depósitos y Pagos
+  function agregarDeposito() {
+    const id = depositoIdCounter++;
+    const c = document.getElementById('depositos-list');
+    if (!c) return;
+    const r = document.createElement('div');
+    r.className = 'grid grid-cols-[1fr_1fr_40px] gap-2 items-center'; r.id = `dep-row-${id}`;
+    r.innerHTML = `
+      <input type="text" class="w-full min-w-0 bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none focus:border-emerald-300 dep-num" id="dep-num-${id}" placeholder="Doc." />
+      <input type="text" class="w-full min-w-0 bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-xs text-right font-mono outline-none focus:border-emerald-300 dep-val" id="dep-val-${id}" placeholder="0" inputmode="numeric" oninput="calcular()" />
+      <button class="w-9 h-9 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg flex items-center justify-center font-bold transition-all" onclick="eliminarDeposito(${id})">×</button>`;
+    c.appendChild(r);
+  }
+
+  function eliminarDeposito(id) { document.getElementById(`dep-row-${id}`)?.remove(); calcular(); }
+  function getTotalDepositos() { let t = 0; document.querySelectorAll('.dep-val').forEach(i => t += parseMonto(i.value)); return t; }
+
+  function agregarFilaPago(tipo) {
+    const id = pagoCounters[tipo]++;
+    const c = document.getElementById(`${tipo}-list`);
+    if (!c) return;
+    const r = document.createElement('div');
+    r.className = 'grid grid-cols-[1fr_1fr_40px] gap-2 items-center'; r.id = `${tipo}-row-${id}`;
+    r.innerHTML = `
+      <input type="text" class="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-slate-400 pago-desc" id="${tipo}-desc-${id}" placeholder="Nota" />
+      <input type="text" class="w-full min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-right font-mono outline-none focus:border-slate-400 pago-val" data-tipo="${tipo}" id="${tipo}-val-${id}" placeholder="0" inputmode="numeric" oninput="calcular()" />
+      <button class="w-9 h-9 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg flex items-center justify-center font-bold transition-all" onclick="eliminarFilaPago('${tipo}',${id})">×</button>`;
+    c.appendChild(r);
+  }
+
+  function eliminarFilaPago(tipo, id) { document.getElementById(`${tipo}-row-${id}`)?.remove(); calcular(); }
+  function getTotalPago(tipo) { let t = 0; document.querySelectorAll(`.pago-val[data-tipo="${tipo}"]`).forEach(i => t += parseMonto(i.value)); return t; }
+
+  // Calcular Maestro
+  function calcular() {
+    const ti = getTotalIslas(), td = getTotalDepositos();
+    const cr = getTotalPago('creditos'), ta = getTotalPago('tarjetas');
+    const co = getTotalPago('copiloto'), sc = getTotalPago('shellcard');
+    const tr = td + cr + ta + co + sc, dif = tr - ti;
+
+    setText('total-islas-display', '$' + formatMonto(ti));
+    setText('total-depositos-display','$' + formatMonto(td));
+    setText('total-efectivo-display', '$' + formatMonto(td));
+    setText('total-ventas-display',   '$' + formatMonto(ti));
+    setText('total-recaudado-display','$' + formatMonto(tr));
+    setText('total-creditos-display', '$' + formatMonto(cr));
+    setText('total-copiloto-display', '$' + formatMonto(co));
+    setText('total-shellcard-display','$' + formatMonto(sc));
+    setText('total-tarjetas-display', '$' + formatMonto(ta));
+    
+    setText('cv-efectivo',  '$' + formatMonto(td));
+    setText('cv-creditos',  '$' + formatMonto(cr));
+    setText('cv-tarjetas',  '$' + formatMonto(ta));
+    setText('cv-copiloto',  '$' + formatMonto(co));
+    setText('cv-shellcard', '$' + formatMonto(sc));
+
+    const de = document.getElementById('diferencia-display');
+    const fd = document.getElementById('fila-diferencia');
+    if (de && fd) {
+      if (dif > 0) {
+        de.textContent = '+$' + formatMonto(dif);
+        de.className = "text-xl font-bold font-mono text-warning"; // warning (orange) for sobrante
+      } else if (dif < 0) {
+        de.textContent = '-$' + formatMonto(Math.abs(dif));
+        de.className = "text-xl font-bold font-mono text-alert"; // error (red) for faltante
+      } else {
+        de.textContent = '$0';
+        de.className = "text-xl font-bold font-mono text-success"; // success (green)
+      }
+    }
+
+    const ft = dif > 0 ? '+$' + formatMonto(dif) : dif < 0 ? '-$' + formatMonto(Math.abs(dif)) : '$0';
+    setText('flash-islas', '$' + formatMonto(ti));
+    setText('flash-diferencia', ft);
+    const fde = document.getElementById('flash-diferencia');
+    if(fde) {
+       fde.style.color = dif < 0 ? '#ef4444' : dif > 0 ? '#f59e0b' : '#10b981';
+    }
+
+    const badge = document.getElementById('estado-badge'), te = document.getElementById('estado-texto'), fe = document.getElementById('flash-estado');
+    if (badge && te) {
+      if (ti === 0) {
+        badge.classList.add('hidden');
+        if(fe) { fe.textContent = '—'; fe.style.color = ''; }
+      } else {
+        badge.classList.remove('hidden');
+        if (Math.abs(dif) < 1) { 
+           badge.className = "text-center py-3 px-4 rounded-xl font-bold text-sm mb-2 shadow-sm border bg-emerald-50 border-emerald-200 text-emerald-700";
+           te.textContent = '✅ Caja Cuadrada Perfecta';
+           if(fe){ fe.textContent = 'OK'; fe.style.color = '#10b981'; }
+        } else if (dif < 0) { 
+           badge.className = "text-center py-3 px-4 rounded-xl font-bold text-sm mb-2 shadow-sm border bg-red-50 border-red-200 text-red-700";
+           te.textContent = '⚠️ Faltante $' + formatMonto(Math.abs(dif)); 
+           if(fe){ fe.textContent = 'FALTA'; fe.style.color = '#ef4444'; }
+        } else { 
+           badge.className = "text-center py-3 px-4 rounded-xl font-bold text-sm mb-2 shadow-sm border bg-amber-50 border-amber-200 text-amber-700";
+           te.textContent = '💰 Sobrante $' + formatMonto(dif); 
+           if(fe){ fe.textContent = 'SOBRE'; fe.style.color = '#f59e0b'; }
+        }
+      }
+    }
+    
+    guardarEstado();
+  }
+
+  // Modales y Acciones extra
+  function mostrarAcciones() {
+    const overlay = document.getElementById('overlay');
+    const sheet = document.getElementById('action-sheet');
+    overlay.classList.remove('hidden');
+    // peq hack para permitir transition
+    setTimeout(() => {
+      overlay.classList.remove('opacity-0');
+      sheet.classList.remove('translate-y-full');
+    }, 10);
+  }
+  
+  function cerrarAcciones() {
+    const overlay = document.getElementById('overlay');
+    const sheet = document.getElementById('action-sheet');
+    overlay.classList.add('opacity-0');
+    sheet.classList.add('translate-y-full');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+  }
+
+  function imprimirReporte() { document.title = `Rendición T${turnoSeleccionado}`; window.print(); }
+  function limpiarFormulario(confirmar = true) {
+    if (confirmar && !confirm('¿Limpiar todo el formulario?')) return;
+    localStorage.removeItem('shell_cierre_caja');
+    ['observaciones','nombre','numero'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    setFechaHoy();
+    document.getElementById('islas-list').innerHTML = ''; islaIdCounter = 1; agregarIsla();
+    document.getElementById('depositos-list').innerHTML = ''; depositoIdCounter = 1;
+    agregarDeposito(); agregarDeposito();
+    ['creditos','copiloto','shellcard','tarjetas'].forEach(t => {
+      const l = document.getElementById(`${t}-list`); if (l) l.innerHTML = '';
+      pagoCounters[t] = 1; agregarFilaPago(t);
+    });
+    seleccionarTurno('1'); calcular(); irTab('tab-turno');
+  }
+
+  async function compartirReporte() {
+    const txt = `Rendición - Turno ${turnoSeleccionado}\nTotal Islas: $${formatMonto(getTotalIslas())}\nRecaudado: $${formatMonto(getTotalIslas() + parseMonto(document.getElementById('diferencia-display').textContent))}`;
+    if (navigator.share) { try { await navigator.share({ title: 'Rendición', text: txt }); return; } catch(e){} }
+    try { await navigator.clipboard.writeText(txt); alert('✅ Copiado'); } catch(e){}
+  }
+
+  // Persistencia local
+  function guardarEstado() { /* Similar to before */ }
+  function cargarEstado() { return false; /* To be implemented correctly if needed */ }
+
+  // Autoguardado visual format
+  document.addEventListener('focusout', e => {
+    const el = e.target;
+    if (el.classList.contains('input-clean') || el.tagName==='INPUT') {
+      if(el.id!=='numero' && el.id!=='nombre' && el.id!=='fecha' && !el.classList.contains('dep-num') && !el.classList.contains('pago-desc')){
+        const v = parseMonto(el.value); if (v > 0) el.value = formatMonto(v);
+      }
+    }
+  });
+
+  // FIREBASE UPSERT FIX
+  async function guardarRendicionBD() {
+    const btn = document.getElementById('btn-guardar-bd');
+    const status = document.getElementById('bd-status');
+    const nombre = document.getElementById('nombre')?.value || '';
+    const fecha = document.getElementById('fecha')?.value || '';
+    
+    if(!nombre || !fecha) {
+      alert("Por favor, ingresa tu Nombre y Fecha antes de guardar.");
+      irTab('tab-turno');
+      return;
+    }
+
+    if (!window.firebaseReady) {
+      status.style.display = 'block'; status.className = "text-center text-[11px] font-bold py-2 rounded-lg mb-6 bg-red-50 text-red-600";
+      status.textContent = 'API de Base de Datos no Configurada.'; return;
+    }
+
+    const orgHTML = btn.innerHTML;
+    btn.innerHTML = '⏳ Sincronizando Sistema...'; btn.disabled = true;
+    
+    const datos = {
+      fecha: fecha,
+      nombre: nombre,
+      numero: document.getElementById('numero')?.value || '',
+      turno: turnoSeleccionado,
+      observaciones: document.getElementById('observaciones')?.value || '',
+      totalIslas: getTotalIslas(), totalDepositos: getTotalDepositos(),
+      totalCreditos: getTotalPago('creditos'), totalTarjetas: getTotalPago('tarjetas'),
+      totalCopiloto: getTotalPago('copiloto'), totalShellCard: getTotalPago('shellcard'),
+      islas: [], depositos: [], creditos: [], tarjetas: [], copiloto: [], shellcard: []
+    };
+    datos.totalRecaudado = datos.totalDepositos + datos.totalCreditos + datos.totalTarjetas + datos.totalCopiloto + datos.totalShellCard;
+    datos.diferencia = datos.totalRecaudado - datos.totalIslas;
+    
+    document.querySelectorAll('.isla-row').forEach(row => {
+       const id = row.id.split('-').pop();
+       const c = parseMonto(document.getElementById(`isla-${id}-comb`)?.value);
+       const nc = parseMonto(document.getElementById(`isla-${id}-nocomb`)?.value);
+       if (c || nc) {
+          datos.islas.push({ isla: parseInt(id), combustible: c, noCombustibles: nc });
+       }
+    });
+    
+    // Extraer depositos
+    document.querySelectorAll('.dep-val').forEach(inp => {
+       const id = inp.id.split('-').pop();
+       const num = document.getElementById(`dep-num-${id}`)?.value || '';
+       const val = parseMonto(inp.value);
+       if (num || val) datos.depositos.push({ numero: num, valor: val });
+    });
+    
+    // Extraer otros pagos
+    ['creditos','tarjetas','copiloto','shellcard'].forEach(t => {
+      document.querySelectorAll(`.pago-val[data-tipo="${t}"]`).forEach(inp => {
+        const id = inp.id.split('-').pop();
+        const desc = document.getElementById(`${t}-desc-${id}`)?.value || '';
+        const val = parseMonto(inp.value);
+        if (desc || val) datos[t].push({ descripcion: desc, valor: val });
+      });
+    });
+
+    // El save
+    const docId = await window.guardarEnFirebase(datos);
+    btn.innerHTML = orgHTML; btn.disabled = false;
+    
+    status.style.display = 'block';
+    if (docId) {
+      status.className = "text-center text-[11px] font-bold py-3 px-4 rounded-xl mb-6 bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm";
+      status.textContent = '✅ Turno guardado y sincronizado correctamente.';
+    } else {
+      status.className = "text-center text-[11px] font-bold py-3 px-4 rounded-xl mb-6 bg-red-50 text-red-700 border border-red-200 shadow-sm";
+      status.textContent = '❌ Hubo un error de conexión al guardar.';
+    }
+  }
+</script>
+</body>
+</html>

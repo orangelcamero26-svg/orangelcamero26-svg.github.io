@@ -1,0 +1,25 @@
+{
+  "name": "Estacion Digital",
+  "short_name": "Estacion Digital",
+  "description": "Rendición de caja para atendedores Shell",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "logo-nuevo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo-nuevo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
