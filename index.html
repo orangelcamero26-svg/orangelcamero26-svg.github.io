@@ -227,18 +227,16 @@
           <div style="position:relative;">
             <input type="text" id="fecha-display" readonly
               class="input-clean"
-              style="cursor:pointer;background:white;padding-left:44px;"
-              onclick="document.getElementById('fecha-picker').showPicker ? document.getElementById('fecha-picker').showPicker() : document.getElementById('fecha-picker').click()"/>
-            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">📅</span>
+              style="cursor:pointer;background:white;padding-left:44px;box-sizing:border-box;"
+              onclick="var p=document.getElementById('fecha');p.showPicker?p.showPicker():p.click()"/>
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex;align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" ry="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
             <input type="date" id="fecha"
-              style="position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;cursor:pointer;"
+              style="position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;cursor:pointer;box-sizing:border-box;"
               onchange="
-                var d = this.value;
+                var d=this.value;
                 if(d){
-                  var parts = d.split('-');
-                  var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-                  document.getElementById('fecha-display').value = parts[2]+' '+months[parseInt(parts[1])-1]+' '+parts[0];
-                  document.getElementById('fecha').value = d;
+                  var p=d.split('-');
+                  document.getElementById('fecha-display').value=p[2]+'/'+p[1]+'/'+p[0];
                 }
               "/>
           </div>
@@ -526,10 +524,9 @@
     if (el) {
       const hoy = new Date().toISOString().split('T')[0];
       el.value = hoy;
-      const parts = hoy.split('-');
-      const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const p = hoy.split('-');
       const display = document.getElementById('fecha-display');
-      if(display) display.value = parts[2]+' '+months[parseInt(parts[1])-1]+' '+parts[0];
+      if (display) display.value = p[2]+'/'+p[1]+'/'+p[0];
     }
   }
 
