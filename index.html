@@ -54,6 +54,25 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script>
+    // GOOGLE SHEETS: Pega aquí la URL de tu Apps Script Web App
+    const SHEETS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwmK6xwWui963I3NIytELgLEuBrkBWVbzQjDISEOtUUMP3pYtQmSVoQGx3dIq44ph7uMQ/exec';
+
+    window.guardarEnSheets = async function(datos) {
+      if (!SHEETS_WEBHOOK_URL) return { ok: false, error: 'URL no configurada' };
+      try {
+        const resp = await fetch(SHEETS_WEBHOOK_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+        return { ok: true };
+      } catch(e) {
+        console.warn('Google Sheets sync error:', e);
+        return { ok: false, error: e.message };
+      }
+    };
+
     const firebaseConfig = {
       apiKey: "AIzaSyD84fWd7QcNIggcRapw1rnqSDj8n8",
       authDomain: "shell-rendicion.firebaseapp.com",
@@ -855,14 +874,19 @@
       });
     });
 
-    // El save
-    const docId = await window.guardarEnFirebase(datos);
+    // Guardar en Firebase y Google Sheets en paralelo
+    const [docId, sheetsResult] = await Promise.all([
+      window.guardarEnFirebase(datos),
+      window.guardarEnSheets(datos)
+    ]);
     btn.innerHTML = orgHTML; btn.disabled = false;
-    
+
     status.style.display = 'block';
     if (docId) {
+      const sheetsOk = SHEETS_WEBHOOK_URL && sheetsResult.ok !== false;
+      const sheetsMsg = SHEETS_WEBHOOK_URL ? (sheetsOk ? ' + Google Sheets ✓' : ' (Sheets: sin conexión)') : '';
       status.className = "text-center text-[11px] font-bold py-3 px-4 rounded-xl mb-6 bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm";
-      status.textContent = '✅ Turno guardado y sincronizado correctamente.';
+      status.textContent = '✅ Turno guardado correctamente.' + sheetsMsg;
     } else {
       status.className = "text-center text-[11px] font-bold py-3 px-4 rounded-xl mb-6 bg-red-50 text-red-700 border border-red-200 shadow-sm";
       status.textContent = '❌ Hubo un error de conexión al guardar.';
